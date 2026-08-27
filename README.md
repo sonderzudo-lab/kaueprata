@@ -35,6 +35,9 @@ iniciais.
 
 ## Projetos
 
+- `/auditoria-heuristica/`: Onde o clique morre, auditoria heurística dos sites dos
+  Correios e da Prefeitura de Goiânia, com os caminhos até cada erro refeitos em
+  animação e classificados pela escala de severidade de Nielsen.
 - `/analise-ux-goiania/`: No lugar do cidadão, análise de usabilidade do site da Prefeitura
   de Goiânia, com as jornadas refeitas dentro de uma réplica animada do site.
 - `/tabuada/`: Corrida da Tabuada, jogo educacional em Canvas 2D e WebGL com
