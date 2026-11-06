@@ -1,0 +1,1753 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Onde o clique morre · Auditoria heurística</title>
+<meta name="description" content="Auditoria heurística de usabilidade nos sites dos Correios e da Prefeitura de Goiânia: sete falhas enquadradas nas heurísticas de Nielsen, com os caminhos até o erro refeitos passo a passo.">
+<meta name="theme-color" content="#0b0d0f">
+<link rel="canonical" href="https://lab.kaueprata.com/auditoria-heuristica/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Onde o clique morre">
+<meta property="og:description" content="Sete falhas de usabilidade nos sites dos Correios e da Prefeitura de Goiânia, enquadradas nas heurísticas de Nielsen e classificadas por severidade.">
+<meta property="og:url" content="https://lab.kaueprata.com/auditoria-heuristica/">
+<meta property="og:image" content="https://lab.kaueprata.com/assets/og-v2.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://lab.kaueprata.com/assets/og-v2.jpg">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<style>
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/assets/v2/fonts/space-grotesk-latin.woff2") format("woff2");
+  font-weight: 400 700; font-display: swap;
+}
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/assets/v2/fonts/space-grotesk-latin-ext.woff2") format("woff2");
+  font-weight: 400 700; font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+1EF2-1EFF, U+20A0-20AB, U+2C60-2C7F;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/assets/v2/fonts/jetbrains-mono-latin.woff2") format("woff2");
+  font-weight: 400 500; font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/assets/v2/fonts/jetbrains-mono-latin-ext.woff2") format("woff2");
+  font-weight: 400 500; font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+1EF2-1EFF, U+20A0-20AB, U+2C60-2C7F;
+}
+
+:root {
+  color-scheme: dark;
+
+  --fundo: #0b0d0f;
+  --painel: #14171a;
+  --painel-alto: #191d21;
+  --linha: #252a30;
+  --linha-forte: #343a42;
+
+  --tinta: #eceeec;
+  --corpo: #c9ccca;
+  --fraca: #8d9298;
+
+  --ciano: #1ec8e0;
+
+  --sev1: #8d9298;
+  --sev2: #ffb020;
+  --sev3: #ff8a3d;
+  --sev4: #ff5f56;
+  --bom: #3fbf7f;
+
+  --correios-azul: #00447c;
+  --correios-amarelo: #ffd100;
+  --gyn-navy: #003856;
+  --gyn-laranja: #f36e22;
+
+  --sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+  --ease: cubic-bezier(.16, .84, .44, 1);
+  --ease-suave: cubic-bezier(.4, 0, .2, 1);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--fundo);
+  color: var(--corpo);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- palco ---------- */
+
+.palco {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  grid-template-rows: 1fr auto;
+}
+
+.slide { display: none; }
+.slide.ativa { display: block; }
+
+.miolo {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: clamp(26px, 5vh, 60px) clamp(20px, 4vw, 48px) 20px;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 2.2vh, 22px);
+}
+
+.slide.ativa .anim {
+  animation: sobe .66s var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 68ms);
+}
+
+@keyframes sobe {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); filter: blur(3px); }
+  60%  { filter: blur(0); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide.ativa .anim { animation: none; }
+  .quadro { transition: none; }
+  .cursor-falso { transition: none; }
+  .alvo::after, .pulso.bate, .giro { animation: none; }
+  * { scroll-behavior: auto !important; }
+}
+
+/* ---------- tipografia ---------- */
+
+.kicker {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--ciano);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(38px, 6.4vw, 76px);
+  line-height: 1.02;
+  letter-spacing: -.03em;
+  font-weight: 700;
+  color: var(--tinta);
+  text-wrap: balance;
+}
+
+h2 {
+  margin: 0;
+  font-size: clamp(25px, 3.5vw, 42px);
+  line-height: 1.1;
+  letter-spacing: -.02em;
+  font-weight: 700;
+  color: var(--tinta);
+  text-wrap: balance;
+}
+
+h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -.005em;
+  color: var(--tinta);
+}
+
+p { margin: 0; }
+
+.apoio {
+  max-width: 64ch;
+  font-size: clamp(15px, 1.5vw, 18px);
+  color: var(--corpo);
+}
+
+.nota {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--fraca);
+}
+
+b, strong { color: var(--tinta); font-weight: 700; }
+
+code {
+  font-family: var(--mono);
+  font-size: .88em;
+  color: var(--tinta);
+  background: #0f1215;
+  border: 1px solid var(--linha);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+/* ---------- grades ---------- */
+
+.duas { display: grid; grid-template-columns: 1.05fr .95fr; gap: clamp(14px, 2vw, 26px); align-items: start; }
+.tres { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.quatro { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.cinco { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+
+@media (max-width: 900px) {
+  .duas, .tres, .quatro, .cinco { grid-template-columns: 1fr; }
+}
+
+.painel {
+  background: var(--painel);
+  border: 1px solid var(--linha);
+  border-radius: 10px;
+  padding: 15px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.painel .rot {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--fraca);
+}
+
+/* ---------- severidade ---------- */
+
+.sev {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 4px 9px 4px 7px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+.sev::before {
+  content: "";
+  width: 8px; height: 8px;
+  border-radius: 2px;
+  background: currentColor;
+}
+.s1 { color: var(--sev1); }
+.s2 { color: var(--sev2); }
+.s3 { color: var(--sev3); }
+.s4 { color: var(--sev4); }
+
+.escala { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.escala .grau {
+  background: var(--painel);
+  border: 1px solid var(--linha);
+  border-top: 3px solid var(--cor);
+  border-radius: 8px;
+  padding: 12px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.escala .n {
+  font-family: var(--mono);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--cor);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.escala .nome { font-size: 13px; font-weight: 700; color: var(--tinta); }
+.escala .txt { font-size: 12px; color: var(--fraca); line-height: 1.5; }
+
+@media (max-width: 760px) { .escala { grid-template-columns: repeat(2, 1fr); } }
+
+/* ---------- heurísticas ---------- */
+
+.heur { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.heur .h {
+  background: var(--painel);
+  border: 1px solid var(--linha);
+  border-radius: 8px;
+  padding: 10px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 92px;
+}
+.heur .h .id {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--fraca);
+  letter-spacing: .08em;
+}
+.heur .h .nm { font-size: 12px; line-height: 1.35; color: var(--corpo); }
+.heur .h.usada { border-color: var(--ciano); background: #101a1d; }
+.heur .h.usada .id { color: var(--ciano); }
+.heur .h.usada .nm { color: var(--tinta); }
+.heur .h .qtd {
+  margin-top: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ciano);
+  letter-spacing: .06em;
+}
+.heur .h.fora .qtd { color: var(--fraca); }
+
+@media (max-width: 900px) { .heur { grid-template-columns: repeat(2, 1fr); } }
+
+/* ---------- etiquetas de heurística ---------- */
+
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .04em;
+  color: var(--corpo);
+  background: #0f1215;
+  border: 1px solid var(--linha-forte);
+  border-radius: 5px;
+  padding: 4px 8px;
+}
+.tag.forte { color: var(--ciano); border-color: #1a4c56; background: #0d181b; }
+
+/* ---------- moldura de navegador (evidência) ---------- */
+
+.captura {
+  border: 1px solid var(--linha-forte);
+  border-radius: 9px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 18px 40px rgba(0,0,0,.45);
+}
+.barra-url {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #1c2126;
+  border-bottom: 1px solid #2b3238;
+}
+.pontos { display: flex; gap: 5px; }
+.pontos i { width: 9px; height: 9px; border-radius: 50%; background: #3a424a; display: block; }
+.url {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: #b9c0c6;
+  background: #0f1418;
+  border: 1px solid #2b3238;
+  border-radius: 5px;
+  padding: 4px 8px;
+  overflow-x: auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+.url .erro { color: #ff8a8a; background: rgba(255,95,86,.16); border-radius: 3px; padding: 0 1px; }
+.url .ok { color: #7fe0a6; }
+.tela { padding: 16px 18px; color: #111; font-size: 13px; line-height: 1.6; }
+
+/* réplica: tela de erro */
+.tela-erro { font-family: "Times New Roman", Times, serif; font-size: 15px; min-height: 150px; }
+.tela-erro p { margin: 0 0 14px; }
+.tela-erro a { color: #0000ee; }
+.tela-erro .sid { font-family: var(--mono); font-size: 12px; }
+
+/* réplica: acesso rápido correios */
+.tela-correios { background: #eeeeee; padding: 14px 16px 10px; }
+.tela-correios .titulo {
+  font-family: var(--sans);
+  font-size: 15px; font-weight: 700; color: #1b1b1b;
+  border-bottom: 3px solid var(--correios-amarelo);
+  display: inline-block; padding-bottom: 3px; margin-bottom: 12px;
+}
+.fileira { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.atalho { display: flex; flex-direction: column; align-items: center; gap: 5px; text-align: center; }
+.atalho .ico {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 2px solid var(--correios-azul);
+  display: grid; place-items: center;
+  font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--correios-azul);
+}
+.atalho .lbl { font-family: var(--sans); font-size: 9.5px; line-height: 1.25; color: var(--correios-azul); }
+.bolinhas { display: flex; justify-content: center; gap: 7px; margin-top: 12px; }
+.bolinhas i { width: 8px; height: 8px; border-radius: 50%; background: #c4c4c4; display: block; }
+.bolinhas i.on { background: var(--correios-azul); }
+
+/* réplica: busca goiânia */
+.tela-gyn { background: #f4f6f8; padding: 0; }
+.gyn-topo { background: var(--gyn-navy); color: #fff; font-family: var(--sans); font-size: 11px; padding: 8px 14px; letter-spacing: .04em; }
+.gyn-busca { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.campo {
+  background: #fff; border: 1px solid #cdd5dc; border-radius: 5px;
+  padding: 7px 10px; font-family: var(--mono); font-size: 12px; color: #12212b;
+}
+.campo .ph { color: #8d9aa5; }
+.gyn-cont { font-family: var(--sans); font-size: 12px; font-weight: 700; color: #12212b; }
+.res { display: flex; flex-direction: column; gap: 6px; }
+.res .item {
+  background: #fff; border: 1px solid #dde3e9; border-left: 3px solid #c3ccd4;
+  border-radius: 4px; padding: 7px 10px;
+  display: flex; align-items: baseline; gap: 8px;
+}
+.res .item .pos { font-family: var(--mono); font-size: 10px; color: #7d8994; }
+.res .item .nome { font-family: var(--sans); font-size: 12px; font-weight: 700; color: #12212b; }
+.res .item .obs { font-family: var(--mono); font-size: 10px; color: #97a2ac; margin-left: auto; white-space: nowrap; }
+.res .item.certo { border-left-color: var(--gyn-laranja); }
+.res .item.certo .obs { color: var(--gyn-laranja); }
+.res .vazio {
+  background: #fff; border: 1px dashed #c9d2da; border-radius: 4px;
+  padding: 16px; text-align: center;
+  font-family: var(--sans); font-size: 12px; color: #7d8994;
+}
+
+/* ---------- antes / depois ---------- */
+
+.ad { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.ad .lado { display: flex; flex-direction: column; gap: 9px; }
+.ad .cab {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 7px;
+}
+.ad .antes .cab { color: var(--sev4); }
+.ad .depois .cab { color: var(--bom); }
+.ad .cab::after { content: ""; flex: 1; height: 1px; background: currentColor; opacity: .35; }
+
+@media (max-width: 900px) { .ad { grid-template-columns: 1fr; } }
+
+.mock {
+  background: var(--painel-alto);
+  border: 1px solid var(--linha);
+  border-radius: 8px;
+  padding: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-height: 168px;
+}
+.mock .m-tit { font-size: 14px; font-weight: 700; color: var(--tinta); }
+.mock .m-txt { font-size: 12px; color: var(--fraca); line-height: 1.55; }
+.mock .m-btn {
+  align-self: flex-start;
+  font-family: var(--sans); font-size: 12px; font-weight: 700;
+  color: #06222a; background: var(--ciano);
+  border-radius: 6px; padding: 7px 13px;
+}
+.mock .m-btn.fantasma {
+  color: var(--corpo); background: transparent; border: 1px solid var(--linha-forte);
+}
+.mock .m-linha { height: 7px; border-radius: 3px; background: var(--linha); }
+.mock .m-linha.curta { width: 55%; }
+.mock .m-alerta {
+  font-family: var(--mono); font-size: 10.5px; color: var(--sev4);
+  border-left: 2px solid var(--sev4); padding-left: 8px;
+}
+
+/* ---------- tabela do painel ---------- */
+
+/* itens de flex/grid nao encolhem abaixo do conteudo sem isto, e o
+   overflow-x interno vaza para o corpo da pagina */
+.miolo > *, .duas > *, .tres > * { min-width: 0; }
+
+.rolagem { overflow-x: auto; min-width: 0; border: 1px solid var(--linha); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; min-width: 720px; }
+thead th {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--fraca); text-align: left; font-weight: 500;
+  padding: 10px 12px; background: var(--painel-alto);
+  border-bottom: 1px solid var(--linha);
+  white-space: nowrap;
+}
+tbody td {
+  padding: 10px 12px; font-size: 13px; color: var(--corpo);
+  border-bottom: 1px solid var(--linha); vertical-align: top;
+}
+tbody tr:last-child td { border-bottom: 0; }
+tbody td.cod { font-family: var(--mono); font-size: 11px; color: var(--fraca); white-space: nowrap; }
+tbody td.hs { font-family: var(--mono); font-size: 11px; color: var(--ciano); white-space: nowrap; }
+tbody td.ach { color: var(--tinta); font-weight: 500; }
+tbody tr.grave td.ach { color: #ffd0cd; }
+
+/* ---------- números ---------- */
+
+.nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.nums .cel {
+  background: var(--painel); border: 1px solid var(--linha); border-radius: 8px;
+  padding: 12px 13px; display: flex; flex-direction: column; gap: 3px;
+}
+.nums .val {
+  font-family: var(--mono); font-size: clamp(22px, 3vw, 30px); font-weight: 700;
+  color: var(--tinta); line-height: 1; font-variant-numeric: tabular-nums;
+}
+.nums .val small { font-size: .5em; color: var(--fraca); margin-left: 2px; }
+.nums .rot { font-size: 11.5px; color: var(--fraca); line-height: 1.4; }
+.nums .cel.ruim .val { color: var(--sev4); }
+.nums .cel.ok .val { color: var(--bom); }
+
+@media (max-width: 760px) { .nums { grid-template-columns: repeat(2, 1fr); } }
+
+/* ---------- capa ---------- */
+
+.capa-meta {
+  display: grid; grid-template-columns: repeat(4, minmax(0, auto));
+  gap: 22px; justify-content: start;
+  font-family: var(--mono); font-size: 12px; color: var(--fraca);
+}
+.capa-meta div span {
+  display: block; font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--linha-forte); margin-bottom: 3px;
+}
+.capa-meta b { color: var(--corpo); font-weight: 500; }
+
+@media (max-width: 760px) { .capa-meta { grid-template-columns: repeat(2, auto); gap: 14px 22px; } }
+
+.alvos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.alvo {
+  background: var(--painel); border: 1px solid var(--linha);
+  border-left: 3px solid var(--marca); border-radius: 9px;
+  padding: 15px 16px; display: flex; flex-direction: column; gap: 9px;
+}
+.alvo .dom { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--marca); }
+.alvo .desc { font-size: 13px; color: var(--corpo); line-height: 1.5; }
+.alvo dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 5px 12px; }
+.alvo dt { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--fraca); padding-top: 2px; }
+.alvo dd { margin: 0; font-size: 12.5px; color: var(--corpo); }
+
+@media (max-width: 900px) { .alvos { grid-template-columns: 1fr; } }
+
+/* ---------- lista de passos ---------- */
+
+.passos { display: flex; flex-direction: column; gap: 7px; margin: 0; padding: 0; list-style: none; counter-reset: p; }
+.passos li {
+  display: flex; gap: 10px; align-items: baseline;
+  font-size: 13px; color: var(--corpo);
+  border-bottom: 1px dashed var(--linha); padding-bottom: 7px;
+}
+.passos li:last-child { border-bottom: 0; }
+.passos li::before {
+  counter-increment: p; content: counter(p, decimal-leading-zero);
+  font-family: var(--mono); font-size: 10.5px; color: var(--ciano); flex: none;
+}
+
+
+/* ---------- jornada animada ---------- */
+
+.jornada { display: flex; flex-direction: column; gap: 11px; }
+
+.palco-j { display: grid; }
+
+.quadro {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transform: translate3d(0, 9px, 0) scale(.993);
+  transition: opacity .5s var(--ease-suave), transform .5s var(--ease);
+  pointer-events: none;
+}
+.quadro.on { opacity: 1; transform: none; pointer-events: auto; }
+
+.passos-j { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.passos-j li { border-bottom: 1px solid var(--linha); }
+.passos-j li:last-child { border-bottom: 0; }
+.passos-j li button {
+  all: unset;
+  box-sizing: border-box;
+  display: flex; gap: 10px; align-items: baseline;
+  width: 100%; padding: 6px 2px; cursor: pointer;
+  font-family: var(--sans); font-size: 12.5px; line-height: 1.45;
+  color: var(--fraca);
+  transition: color .35s var(--ease-suave);
+}
+.passos-j li button:focus-visible { outline: 2px solid var(--ciano); outline-offset: 1px; border-radius: 4px; }
+.passos-j li button:hover { color: var(--corpo); }
+.passos-j .n {
+  font-family: var(--mono); font-size: 10.5px; flex: none;
+  color: var(--linha-forte);
+  transition: color .35s var(--ease-suave);
+  font-variant-numeric: tabular-nums;
+}
+.passos-j li.feito button { color: var(--corpo); }
+.passos-j li.feito .n { color: var(--fraca); }
+.passos-j li.on button { color: var(--tinta); }
+.passos-j li.on .n { color: var(--ciano); }
+.passos-j li.on.fim button { color: #ffd6d3; }
+.passos-j li.on.fim .n { color: var(--sev4); }
+
+.controle-j { display: flex; align-items: center; gap: 11px; }
+.barra-j { flex: 1; height: 2px; background: var(--linha); border-radius: 2px; overflow: hidden; }
+.barra-j i { display: block; height: 100%; width: 0; background: var(--ciano); transition: width .45s var(--ease-suave); }
+.repetir {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--fraca); background: none; border: 1px solid var(--linha-forte);
+  border-radius: 999px; padding: 4px 11px; cursor: pointer; white-space: nowrap;
+  transition: color .25s var(--ease-suave), border-color .25s var(--ease-suave);
+}
+.repetir:hover { color: var(--ciano); border-color: var(--ciano); }
+.repetir:focus-visible { outline: 2px solid var(--ciano); outline-offset: 2px; }
+
+/* alvo do clique */
+.alvo { position: relative; }
+.alvo::after {
+  content: ""; position: absolute; inset: -5px;
+  border: 2px solid var(--sev4); border-radius: 7px;
+  opacity: 0; animation: respira 1.7s var(--ease-suave) infinite;
+  pointer-events: none;
+}
+@keyframes respira {
+  0%, 100% { opacity: .2; transform: scale(.99); }
+  50%      { opacity: .85; transform: scale(1.012); }
+}
+
+/* cursor falso e pulso de clique */
+.com-cursor { position: relative; }
+.cursor-falso {
+  position: absolute; top: 0; left: 0; z-index: 4;
+  width: 15px; height: 21px; pointer-events: none; opacity: 0;
+  transition: transform .8s var(--ease), opacity .3s var(--ease-suave);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .45));
+}
+.cursor-falso.vis { opacity: 1; }
+.pulso {
+  position: absolute; top: 0; left: 0; z-index: 3;
+  width: 24px; height: 24px; margin: -12px 0 0 -12px;
+  border: 2px solid var(--cor-pulso, #e03028); border-radius: 50%;
+  opacity: 0; pointer-events: none;
+}
+.palco-j { --cor-pulso: #e03028; }
+.ad .depois .mock { --cor-pulso: var(--ciano); }
+.painel { --cor-pulso: var(--ciano); }
+.pulso.bate { animation: bater .6s var(--ease) both; }
+@keyframes bater {
+  from { transform: scale(.35); opacity: .95; }
+  to   { transform: scale(1.7); opacity: 0; }
+}
+
+.placar {
+  display: flex; gap: 16px; align-items: baseline;
+  font-family: var(--mono); font-size: 11px; color: var(--fraca);
+}
+.placar b { font-size: 17px; color: var(--tinta); font-variant-numeric: tabular-nums; }
+.placar .zero b { color: var(--sev4); }
+
+/* réplicas extras */
+.card-com { background: #fff; padding: 15px 16px; text-align: center; font-family: var(--sans); }
+.card-com .foto {
+  height: 78px; border-radius: 5px; margin-bottom: 12px;
+  background: linear-gradient(135deg, #0b4a86, #1c74bb);
+  display: grid; place-items: center;
+  color: #cfe4f6; font-family: var(--mono); font-size: 9.5px; letter-spacing: .16em;
+}
+.card-com h4 { margin: 0 0 7px; font-size: 15px; color: var(--correios-azul); font-weight: 700; }
+.card-com p { margin: 0 0 12px; font-size: 12px; color: #3a4653; line-height: 1.5; }
+.card-com .cta {
+  display: inline-block; padding: 8px 17px;
+  background: var(--correios-azul); color: #fff;
+  font-size: 12.5px; font-weight: 700; text-decoration: underline;
+  border: 2px solid #0a3a68; border-radius: 5px;
+}
+
+.tela-carregando { display: grid; place-items: center; gap: 11px; min-height: 158px; background: #fff; }
+.giro {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 2.5px solid #dde3e9; border-top-color: var(--correios-azul);
+  animation: gira 1s linear infinite;
+}
+@keyframes gira { to { transform: rotate(360deg); } }
+.tela-carregando .leg { font-family: var(--mono); font-size: 10.5px; color: #7d8994; }
+
+/* ---------- barra de navegação ---------- */
+
+.regua {
+  position: sticky; bottom: 0;
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px clamp(16px, 4vw, 40px);
+  background: rgba(11,13,15,.92);
+  border-top: 1px solid var(--linha);
+  backdrop-filter: blur(8px);
+}
+.trilha { flex: 1; display: flex; gap: 4px; }
+.trilha button {
+  flex: 1; height: 20px; padding: 0;
+  background: none; border: 0; cursor: pointer;
+  display: grid; align-items: center;
+}
+.trilha button::after {
+  content: ""; display: block; height: 3px; border-radius: 2px;
+  background: var(--linha-forte); transition: background .25s var(--ease);
+}
+.trilha button[data-pitch]::after { background: #3d4750; }
+.trilha button:hover::after { background: var(--fraca); }
+.trilha button[aria-current="true"]::after { background: var(--ciano); }
+.trilha button:focus-visible { outline: 2px solid var(--ciano); outline-offset: 2px; border-radius: 3px; }
+
+.contador {
+  font-family: var(--mono); font-size: 11px; color: var(--fraca);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.setas { display: flex; gap: 6px; }
+.setas button {
+  width: 30px; height: 28px;
+  background: var(--painel); color: var(--corpo);
+  border: 1px solid var(--linha-forte); border-radius: 6px;
+  font-family: var(--mono); font-size: 13px; cursor: pointer;
+  transition: border-color .2s var(--ease), color .2s var(--ease);
+}
+.setas button:hover { border-color: var(--ciano); color: var(--ciano); }
+.setas button:focus-visible { outline: 2px solid var(--ciano); outline-offset: 2px; }
+
+.legenda-pitch {
+  font-family: var(--mono); font-size: 10px; color: var(--fraca);
+  display: flex; align-items: center; gap: 6px;
+}
+.legenda-pitch i { width: 14px; height: 3px; border-radius: 2px; background: #3d4750; display: block; }
+
+@media (max-width: 700px) { .legenda-pitch { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="palco">
+
+<!-- 01 · capa -->
+<section class="slide ativa" aria-label="Capa">
+  <div class="miolo">
+    <p class="kicker anim" style="--i:0">AC2 · oficina de auditoria heurística</p>
+    <h1 class="anim" style="--i:1">Onde o clique<br>morre.</h1>
+    <p class="apoio anim" style="--i:2">Correios e Prefeitura de Goiânia. Ninguém escolhe usar os dois. Nos dois, o conteúdo está lá e o sistema roda. O caminho até ele é que quebra. Sete falhas achadas na navegação, cada uma com a heurística de Nielsen que ela viola e uma nota de 1 a 4.</p>
+    <div class="capa-meta anim" style="--i:3">
+      <div><span>objetos</span><b>correios.com.br<br>goiania.go.gov.br</b></div>
+      <div><span>método</span><b>varredura heurística<br>em tarefa central</b></div>
+      <div><span>achados</span><b>7 problemas<br>2 catastróficos</b></div>
+      <div><span>autores</span><b>Kauê Prata<br>Daniel Ubirajara</b></div>
+    </div>
+    <p class="nota anim" style="--i:4">Régua abaixo: os traços mais claros marcam a rota do pitch de 3 minutos. Setas ← → navegam.</p>
+  </div>
+</section>
+
+<!-- 02 · método -->
+<section class="slide" aria-label="Método e escala">
+  <div class="miolo">
+    <p class="kicker anim" style="--i:0">01 · método</p>
+    <h2 class="anim" style="--i:1">A régua antes do julgamento</h2>
+    <p class="apoio anim" style="--i:2">Percorremos a tarefa central de cada site, do começo ao fim, com as palavras de quem só quer resolver a vida. Cada problema achado leva duas etiquetas: a heurística que ele viola e a severidade.</p>
+
+    <div class="escala anim" style="--i:3">
+      <div class="grau" style="--cor: var(--sev1)">
+        <div class="n">1</div>
+        <div class="nome">Cosmético</div>
+        <div class="txt">Incomoda, não atrapalha. Só arrumar se sobrar tempo.</div>
+      </div>
+      <div class="grau" style="--cor: var(--sev2)">
+        <div class="n">2</div>
+        <div class="nome">Menor</div>
+        <div class="txt">Atrasa a pessoa, mas ela chega. Baixa prioridade.</div>
+      </div>
+      <div class="grau" style="--cor: var(--sev3)">
+        <div class="n">3</div>
+        <div class="nome">Grave</div>
+        <div class="txt">Trava a tarefa para muita gente. Alta prioridade.</div>
+      </div>
+      <div class="grau" style="--cor: var(--sev4)">
+        <div class="n">4</div>
+        <div class="nome">Catastrófico</div>
+        <div class="txt">A tarefa não se completa. Corrigir antes de qualquer outra coisa.</div>
+      </div>
+    </div>
+
+    <p class="nota anim" style="--i:4">As dez heurísticas, e quantos dos sete achados encostam em cada uma:</p>
+
+    <div class="heur anim" style="--i:5">
+      <div class="h usada"><div class="id">H1</div><div class="nm">Visibilidade do status do sistema</div><div class="qtd">4 achados</div></div>
+      <div class="h usada"><div class="id">H2</div><div class="nm">Correspondência com o mundo real</div><div class="qtd">5 achados</div></div>
+      <div class="h usada"><div class="id">H3</div><div class="nm">Controle e liberdade do usuário</div><div class="qtd">2 achados</div></div>
+      <div class="h usada"><div class="id">H4</div><div class="nm">Consistência e padrões</div><div class="qtd">2 achados</div></div>
+      <div class="h fora"><div class="id">H5</div><div class="nm">Prevenção de erros</div><div class="qtd">não exercida</div></div>
+      <div class="h usada"><div class="id">H6</div><div class="nm">Reconhecer em vez de memorizar</div><div class="qtd">2 achados</div></div>
+      <div class="h usada"><div class="id">H7</div><div class="nm">Flexibilidade e eficiência de uso</div><div class="qtd">1 achado</div></div>
+      <div class="h usada"><div class="id">H8</div><div class="nm">Estética e design minimalista</div><div class="qtd">1 achado</div></div>
+      <div class="h usada"><div class="id">H9</div><div class="nm">Reconhecer, diagnosticar e sair do erro</div><div class="qtd">3 achados</div></div>
+      <div class="h fora"><div class="id">H10</div><div class="nm">Ajuda e documentação</div><div class="qtd">não exercida</div></div>
+    </div>
+
+    <p class="nota anim" style="--i:6">H5 e H10 ficaram de fora: nenhuma tarefa chegou a formulário com validação nem a central de ajuda. Marcar heurística que não foi testada é enquadramento forçado.</p>
+  </div>
+</section>
+
+<!-- 03 · alvos -->
+<section class="slide" aria-label="Os dois alvos">
+  <div class="miolo">
+    <p class="kicker anim" style="--i:0">02 · alvos</p>
+    <h2 class="anim" style="--i:1">Dois monopólios de fato</h2>
+    <p class="apoio anim" style="--i:2">Escolhemos os dois pelo mesmo motivo: ninguém usa por gosto e ninguém tem para onde ir. Quando a interface falha, a pessoa não troca de fornecedor. Ela desiste ou liga.</p>
+
+    <div class="alvos anim" style="--i:3">
+      <div class="alvo" style="--marca: var(--correios-amarelo)">
+        <div class="dom">correios.com.br</div>
+        <div class="desc">Empresa pública, presente em todos os municípios. A home concentra rastreio, cálculo de frete e a porta de entrada comercial.</div>
+        <dl>
+          <dt>tarefa</dt><dd>rastrear um objeto e falar com um consultor comercial</dd>
+          <dt>coleta</dt><dd>27 de agosto de 2026, navegação e inspeção do código da página</dd>
+          <dt>achados</dt><dd>3 problemas: 1 catastrófico e 2 graves</dd>
+        </dl>
+      </div>
+      <div class="alvo" style="--marca: var(--gyn-laranja)">
+        <div class="dom">goiania.go.gov.br</div>
+        <div class="desc">Portal da capital de Goiás, com um catálogo de 346 serviços. Único canal digital oficial para saúde, educação e tributos municipais.</div>
+        <dl>
+          <dt>tarefa</dt><dd>cinco perguntas de morador: consulta, matrícula, IPTU, multa, esporte</dd>
+          <dt>coleta</dt><dd>20 de agosto de 2026, cinco jornadas percorridas da home ao fim</dd>
+          <dt>achados</dt><dd>4 problemas: 1 catastrófico e 3 graves</dd>
+        </dl>
+      </div>
+    </div>
+
+    <p class="nota anim" style="--i:4">A análise de Goiânia está em lab.kaueprata.com/analise-ux-goiania/, com as jornadas refeitas em réplicas navegáveis. Aqui ela volta, agora lida pelas heurísticas.</p>
+  </div>
+</section>
+
+<!-- 04 · COR-01 -->
+<section class="slide" aria-label="Correios: consultor comercial">
+  <div class="miolo">
+    <p class="kicker anim" style="--i:0">COR-01 · correios.com.br</p>
+    <h2 class="anim" style="--i:1">O botão que a empresa mais quer que você clique não abre</h2>
+
+    <div class="duas">
+      <div class="jornada anim" style="--i:2" data-jornada data-tempo="2500">
+        <div class="palco-j">
+
+          <div class="quadro on">
+            <div class="captura">
+              <div class="barra-url">
+                <span class="pontos" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="url">www.correios.com.br<span class="ok">/</span></span>
+              </div>
+              <div class="tela card-com">
+                <div class="foto">ATENDIMENTO COMERCIAL</div>
+                <h4>Atendimento Comercial</h4>
+                <p>Vantagens exclusivas, preços diferenciados,<br>ferramentas gratuitas e muito mais.</p>
+                <span class="cta">Quero falar com um consultor!</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="quadro">
+            <div class="captura">
+              <div class="barra-url">
+                <span class="pontos" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="url">www.correios.com.br<span class="ok">/</span></span>
+              </div>
+              <div class="tela card-com">
+                <div class="foto">ATENDIMENTO COMERCIAL</div>
+                <h4>Atendimento Comercial</h4>
+                <p>Vantagens exclusivas, preços diferenciados,<br>ferramentas gratuitas e muito mais.</p>
+                <span class="cta alvo" data-clique>Quero falar com um consultor!</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="quadro">
+            <div class="captura">
+              <div class="barra-url">
+                <span class="pontos" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="url">c.correios.com.br/atendimentocomercial</span>
+              </div>
+              <div class="tela tela-carregando">
+                <span class="giro" aria-hidden="true"></span>
+                <span class="leg">redirecionando…</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="quadro">
+            <div class="captura">
+              <div class="barra-url">
+                <span class="pontos" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="url">faleconosco.correios.com.br/faleconosco<span class="erro">//</span>app/cadastro/contrate/index.php</span>
+              </div>
+              <div class="tela tela-carregando">
+                <span class="giro" aria-hidden="true"></span>
+                <span class="leg">duas barras na URL final</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="quadro">
+            <div class="captura">
+              <div class="barra-url">
+                <span class="pontos" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="url">faleconosco.correios.com.br/faleconosco<span class="erro">//</span>app/cadastro/contrate/index.php</span>
+              </div>
+              <div class="tela tela-erro">
+                <p>The requested URL was rejected. Please consult with your administrator.</p>
+                <p class="sid">Your support ID is: 11005960512987279443</p>
+                <p><a href="#0" onclick="return false;" data-clique>[Go Back]</a></p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <ol class="passos-j">
+          <li><button type="button"><span class="n">01</span><span>Home dos Correios, bloco Atendimento Comercial</span></button></li>
+          <li><button type="button"><span class="n">02</span><span>Clique em “Quero falar com um consultor!”</span></button></li>
+          <li><button type="button"><span class="n">03</span><span>Sai para o encurtador c.correios.com.br</span></button></li>
+          <li><button type="button"><span class="n">04</span><span>A URL final é montada com duas barras</span></button></li>
+          <li class="fim"><button type="button"><span class="n">05</span><span>O firewall rejeita. Fim da linha, em inglês.</span></button></li>
+        </ol>
+
+        <div class="controle-j">
+          <span class="barra-j" aria-hidden="true"><i></i></span>
+          <button type="button" class="repetir">↻ repetir</button>
+        </div>
+
+        <p class="nota">Réplica do caminho percorrido em 27/08/2026. Cada tela reproduz o que o navegador mostrou naquele passo.</p>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:12px">
+        <div class="anim" style="--i:3"><span class="sev s4">severidade 4 · catastrófico</span></div>
+
+        <div class="painel anim" style="--i:4">
+          <div class="rot">heurísticas violadas</div>
+          <div class="tags">
+            <span class="tag forte">H9 · reconhecer, diagnosticar e sair do erro</span>
+            <span class="tag">H2 · mundo real</span>
+            <span class="tag">H1 · status</span>
+            <span class="tag">H3 · controle e liberdade</span>
+          </div>
+        </div>
+
+        <div class="painel anim" style="--i:5">
+          <div class="rot">por que é violação, e não azar</div>
+          <p style="font-size:13px; line-height:1.55">
+            <b>H9:</b> a mensagem não diz o que houve nem o que fazer. Devolve um número de 20 dígitos que não serve para nada: não há telefone, e-mail ou formulário para onde levá-lo.<br>
+            <b>H2:</b> site inteiro em português devolve o erro em inglês e manda “consultar seu administrador”. O cliente dos Correios não tem administrador.<br>
+            <b>H1:</b> nada na home avisa que o caminho está fora do ar.<br>
+            <b>H3:</b> a única saída é <code>[Go Back]</code>. Ele roda <code>history.back()</code> e joga a pessoa na mesma home, na frente do mesmo botão quebrado.
+          </p>
+        </div>
+
+        <div class="painel anim" style="--i:6">
+          <div class="rot">impacto</div>
+          <p style="font-size:13px; line-height:1.55">O bloco existe para captar contrato empresarial. É o único caminho comercial da home e termina numa página sem logo, sem cabeçalho e sem link de volta para os Correios.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 · COR-01 causa -->
+<section class="slide" aria-label="Correios: a causa do erro">
+  <div class="miolo">
+    <p class="kicker anim" style="--i:0">COR-01 · causa raiz</p>
+    <h2 class="anim" style="--i:1">Uma barra a mais</h2>
+    <p class="apoio anim" style="--i:2">A página de destino existe e funciona. Quem derruba é o redirecionamento: <code>c.correios.com.br/atendimentocomercial</code> monta a URL final com duas barras, e o firewall bloqueia antes de chegar ao servidor.</p>
+
+    <div class="tres">
+      <div class="painel anim" style="--i:3">
+        <div class="rot">o que o botão faz</div>
+        <p class="nota" style="color:var(--corpo); word-break:break-all">c.correios.com.br/atendimentocomercial<br>↓<br>/faleconosco<span style="color:var(--sev4)">//</span>app/cadastro/contrate/</p>
+        <p style="font-size:12px; color:var(--sev4); font-family:var(--mono)">Request Rejected</p>
+      </div>
+      <div class="painel anim" style="--i:4">
+        <div class="rot">a mesma URL, com uma barra</div>
+        <p class="nota" style="color:var(--corpo); word-break:break-all">/faleconosco<span style="color:var(--bom)">/</span>app/cadastro/contrate/</p>
+        <p style="font-size:12px; color:var(--bom); font-family:var(--mono)">FALE CONOSCO · formulário abre normalmente</p>
+      </div>
+      <div class="painel anim" style="--i:5">
+        <div class="rot">no código da própria home</div>
+        <p style="font-size:12.5px; line-height:1.55">Os outros três links para o Fale Conosco na mesma página usam barra simples e funcionam. Só o botão do consultor passa pelo encurtador que insere a barra extra.</p>
+      </div>
+    </div>
+
+    <div class="painel anim" style="--i:6">
+      <div class="rot">a lição de usabilidade</div>
+      <p style="font-size:13.5px; line-height:1.6; max-width:74ch">Corrigir o caractere leva minutos. O que importa aqui é outra coisa: <b>ninguém tratou a falha como parte da interface</b>. A resposta ao erro ficou por conta da tela padrão do firewall, escrita para quem administra servidor. A heurística 9 cobra o contrário. Depois do erro, a interface tem que continuar falando com a pessoa.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 06 · COR-02 -->
+<section class="slide" aria-label="Correios: carrossel fantasma">
+  <div class="miolo">
+    <p class="kicker anim" style="--i:0">COR-02 · correios.com.br</p>
+    <h2 class="anim" style="--i:1">O indicador diz “página 2 de 3”. Não existe página 1, nem 3.</h2>
+
+    <div class="duas">
+      <div class="anim" style="--i:2" role="img" aria-label="Réplica esquemática do bloco Acesso rápido dos Correios, com doze atalhos e três bolinhas de paginação.">
+        <div class="captura">
+          <div class="barra-url">
+            <span class="pontos" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="url">www.correios.com.br<span class="ok">/</span></span>
+          </div>
+          <div class="tela tela-correios com-cursor" data-demo-morta>
+            <svg class="cursor-falso" viewBox="0 0 15 21" aria-hidden="true"><path d="M1 1l12 11-5.3.6 3 5.6-2.6 1.4-3-5.6-4.1 3.4z" fill="#fff" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/></svg>
+            <span class="pulso" aria-hidden="true"></span>
+            <div class="titulo">Acesso rápido</div>
+            <div class="fileira">
+              <div class="atalho"><div class="ico">$</div><div class="lbl">Preços e Prazos</div></div>
+              <div class="atalho"><div class="ico">+</div><div class="lbl">Mais Correios</div></div>
+              <div class="atalho"><div class="ico">▤</div><div class="lbl">App Correios</div></div>
+              <div class="atalho"><div class="ico">◎</div><div class="lbl">Busca CEP</div></div>
+              <div class="atalho"><div class="ico">»</div><div class="lbl">Correios Empresas</div></div>
+              <div class="atalho"><div class="ico">!</div><div class="lbl">Desconfiou de fraude?</div></div>
+            </div>
+            <div class="fileira" style="margin-top:8px">
+              <div class="atalho"><div class="ico">⊕</div><div class="lbl">Minhas Importações</div></div>
+              <div class="atalho"><div class="ico">⌂</div><div class="lbl">Encontre sua agência</div></div>
+              <div class="atalho"><div class="ico">▣</div><div class="lbl">Loja</div></div>
+              <div class="atalho"><div class="ico">▢</div><div class="lbl">Pré Postagem</div></div>
+              <div class="atalho"><div class="ico">◍</div><div class="lbl">Preços Internacionais</div></div>
+              <div class="atalho"><div class="ico">⋈</div><div class="lbl">Correios Aqui</div></div>
+            </div>
+            <div class="bolinhas" aria-hidden="true"><i></i><i class="on"></i><i></i></div>
+          </div>
+        </div>
+        <div class="placar" style="margin-top:11px">
+          <span>tentativas de avançar <b data-tentativas>0</b></span>
+          <span class="zero">reações do sistema <b>0</b></span>
+        </div>
+        <p class="nota" style="margin-top:7px">Réplica esquemática. As três bolinhas são o elemento real da página, e a do meio vem marcada em azul. O cursor acima faz o que qualquer pessoa faz diante de um indicador de páginas.</p>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:12px">
+        <div class="anim" style="--i:3"><span class="sev s3">severidade 3 · grave</span></div>
+
+        <div class="painel anim" style="--i:4">
+          <div class="rot">heurísticas violadas</div>
+          <div class="tags">
+            <span class="tag forte">H1 · visibilidade do status do sistema</span>
+            <span class="tag">H3 · controle e liberdade</span>
+            <span class="tag">H4 · consistência e padrões</span>
+          </div>
+        </div>
+
+        <div class="painel anim" style="--i:5">
+          <div class="rot">o que a inspeção mostrou</div>
+          <p style="font-size:13px; line-height:1.55">As bolinhas são <code>&lt;li&gt;•&lt;/li&gt;</code>, o caractere de marcador puro, com <code>tabindex="-1"</code>, sem <code>role</code> e com <code>cursor: auto</code>. Na página não há <code>.slick-track</code>, <code>.slick-list</code> nem <code>.slick-arrow</code>, e <code>jQuery.fn.slick</code> está indefinido. <b>O carrossel nunca foi ligado.</b> Ficou o enfeite, sem o mecanismo.</p>
+        </div>
+
+        <div class="painel anim" style="--i:6">
+          <div class="rot">por que é violação</div>
+          <p style="font-size:13px; line-height:1.55">
+            <b>H1:</b> o indicador anuncia “você está na 2ª de 3 telas”. O sistema não tem esse estado. Feedback errado sai pior do que feedback nenhum.<br>
+            <b>H3:</b> a pessoa vê que há mais e não acha como chegar lá. Clique, arraste e teclado não fazem nada.<br>
+            <b>H4:</b> carrossel promete setas e área arrastável. Usar o sinal do padrão sem os controles dele quebra o que a pessoa aprendeu em outros sites.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 07 · COR-03 -->
+<section class="slide" aria-label="Correios: campo de rastreamento sem rótulo">
+  <div class="miolo">
+    <p class="kicker anim" style="--i:0">COR-03 · correios.com.br</p>
+    <h2 class="anim" style="--i:1">O campo mais usado do site é o único sem nome</h2>
+    <p class="apoio anim" style="--i:2">Rastrear objeto é a tarefa central do site. O campo que faz isso não tem <code>&lt;label&gt;</code> nem <code>aria-label</code>. A instrução inteira mora no exemplo dentro da caixa, que some assim que a pessoa digita a primeira letra.</p>
+
+    <div class="duas">
+      <div class="painel anim" style="--i:3">
+        <div class="rot">o campo, como está</div>
+        <div class="campo" style="background:#fff; margin-top:2px" data-clique><span class="ph">AA123456789BR ou 000.111.222.33</span></div>
+        <p style="font-size:12.5px; line-height:1.55; color:var(--fraca)">Sem rótulo. Dois formatos num exemplo só, e ninguém diz que o segundo é CPF. Quem digita metade e se perde precisa apagar tudo para reler a regra.</p>
+      </div>
+
+      <div class="painel anim" style="--i:4">
+        <div class="rot">os campos vizinhos, na mesma home</div>
+        <div class="tags" style="margin:2px 0 4px">
+          <span class="tag">Origem</span><span class="tag">Destino</span>
+          <span class="tag">Altura (A)</span><span class="tag">Largura (L)</span><span class="tag">Comprimento (C)</span>
+        </div>
+        <p style="font-size:12.5px; line-height:1.55; color:var(--fraca)">Os cinco campos do cálculo de frete têm <code>&lt;label&gt;</code> ligado certo. A inconsistência está dentro da mesma tela, entre dois blocos vizinhos.</p>
+      </div>
+    </div>
+
+    <div class="tres">
+      <div class="anim" style="--i:5"><span class="sev s3">severidade 3 · grave</span></div>
+      <div class="painel anim" style="--i:6; grid-column: span 2">
+        <div class="rot">heurísticas violadas</div>
+        <div class="tags">
+          <span class="tag forte">H6 · reconhecer em vez de memorizar</span>
+          <span class="tag">H4 · consistência e padrões</span>
+          <span class="tag">H2 · mundo real</span>
+        </div>
+        <p style="font-size:13px; line-height:1.55; margin-top:4px">
+          <b>H6:</b> o exemplo some justo quando a instrução faz falta, e a pessoa tem que guardar o formato na cabeça.
+          <b>H2:</b> “000.111.222.33” nunca é chamado de CPF. O sistema mostra a máscara e espera que a pessoa adivinhe.
+          <b>Acessibilidade:</b> leitor de tela anuncia o campo principal do site só como “editar texto”, sem nome. Para quem depende do leitor, a tarefa central não existe.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 · GYN-01 -->
+<section class="slide" aria-label="Goiânia: a busca">
+  <div class="miolo">
+    <p class="kicker anim" style="--i:0">GYN-01 · goiania.go.gov.br</p>
+    <h2 class="anim" style="--i:1">“Matricular filho” devolve zero. “Matrícula” devolve quinze.</h2>
+
+    <div class="duas">
+      <div class="jornada anim" style="--i:2" data-jornada data-tempo="2600">
+        <div class="palco-j">
+
+          <div class="quadro on">
+            <div class="captura">
+              <div class="barra-url">
+                <span class="pontos" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="url">www.goiania.go.gov.br<span class="ok">/servicos/</span></span>
+              </div>
+              <div class="tela tela-gyn">
+                <div class="gyn-topo">Início · Serviços · Transparência</div>
+                <div class="gyn-busca">
+                  <div class="campo"><span class="ph">Digite o serviço</span></div>
+                  <div class="gyn-cont">Encontramos 346 resultados</div>
+                  <div class="res">
+                    <div class="item"><span class="nome">Central de Interpretação de Libras</span></div>
+                    <div class="item"><span class="nome">Casa do Empreendedor</span></div>
+                    <div class="item"><span class="nome">Acesso a Medicamentos Especiais</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="quadro">
+            <div class="captura">
+              <div class="barra-url">
+                <span class="pontos" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="url">www.goiania.go.gov.br<span class="ok">/servicos/</span></span>
+              </div>
+              <div class="tela tela-gyn">
+                <div class="gyn-topo">Início · Serviços · Transparência</div>
+                <div class="gyn-busca">
+                  <div class="campo alvo" data-clique>matricular filho</div>
+                  <div class="gyn-cont">Encontramos 346 resultados</div>
+                  <div class="res">
+                    <div class="item"><span class="nome">Central de Interpretação de Libras</span></div>
+                    <div class="item"><span class="nome">Casa do Empreendedor</span></div>
+                    <div class="item"><span class="nome">Acesso a Medicamentos Especiais</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="quadro">
+            <div class="captura">
+              <div class="barra-url">
+                <span class="pontos" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="url">www.goiania.go.gov.br<span class="ok">/servicos/</span></span>
+              </div>
+              <div class="tela tela-gyn">
+                <div class="gyn-topo">Início · Serviços · Transparência</div>
+                <div class="gyn-busca">
+                  <div class="campo">matricular filho</div>
+                  <div class="gyn-cont">Encontramos 0 resultados</div>
+                  <div class="res"><div class="vazio">Nenhum serviço encontrado</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="quadro">
+            <div class="captura">
+              <div class="barra-url">
+                <span class="pontos" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="url">www.goiania.go.gov.br<span class="ok">/servicos/</span></span>
+              </div>
+              <div class="tela tela-gyn">
+                <div class="gyn-topo">Início · Serviços · Transparência</div>
+                <div class="gyn-busca">
+                  <div class="campo">matrícula</div>
+                  <div class="gyn-cont">Encontramos 15 resultados</div>
+                  <div class="res">
+                    <div class="item certo"><span class="pos">1º</span><span class="nome">Matrículas Web</span><span class="obs">era esse</span></div>
+                    <div class="item"><span class="pos">2º</span><span class="nome">Maternidades SMS</span></div>
+                    <div class="item"><span class="pos">3º</span><span class="nome">Manual de Aplicação da Marca</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="quadro">
+            <div class="captura">
+              <div class="barra-url">
+                <span class="pontos" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="url">www.goiania.go.gov.br<span class="ok">/servicos/matriculas-web/</span></span>
+              </div>
+              <div class="tela tela-gyn">
+                <div class="gyn-topo">Início · Serviços · Transparência</div>
+                <div class="gyn-busca">
+                  <div class="gyn-cont">Matrículas Web</div>
+                  <p style="font-family:var(--sans); font-size:12px; color:#3a4653; line-height:1.5; margin:0">Serviço online de pré-matrícula para solicitação de vagas nas Escolas e CMEIs da Rede Municipal.</p>
+                  <span style="align-self:flex-start; background:var(--gyn-laranja); color:#fff; font-family:var(--sans); font-size:12px; font-weight:700; border-radius:5px; padding:7px 14px" data-clique>Acessar serviço</span>
+                  <p style="font-family:var(--mono); font-size:10.5px; color:#7d8994; margin:2px 0 0">O serviço sempre esteve aqui. A busca é que não o entregou.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <ol class="passos-j">
+          <li><button type="button"><span class="n">01</span><span>Portal de Serviços, catálogo com 346 itens</span></button></li>
+          <li><button type="button"><span class="n">02</span><span>A mãe digita o que diria em voz alta: “matricular filho”</span></button></li>
+          <li class="fim"><button type="button"><span class="n">03</span><span>Encontramos 0 resultados. Sem sugestão, sem saída.</span></button></li>
+          <li><button type="button"><span class="n">04</span><span>Trocando para a palavra do governo, “matrícula”: 15 itens</span></button></li>
+          <li><button type="button"><span class="n">05</span><span>Matrículas Web em 1º, existia o tempo todo</span></button></li>
+        </ol>
+
+        <div class="controle-j">
+          <span class="barra-j" aria-hidden="true"><i></i></span>
+          <button type="button" class="repetir">↻ repetir</button>
+        </div>
+
+        <p class="nota">Ordem literal devolvida pelo site em 20/08/2026.</p>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:12px">
+        <div class="anim" style="--i:3"><span class="sev s4">severidade 4 · catastrófico</span></div>
+
+        <div class="painel anim" style="--i:4">
+          <div class="rot">heurísticas violadas</div>
+          <div class="tags">
+            <span class="tag forte">H2 · correspondência com o mundo real</span>
+            <span class="tag">H1 · status</span>
+            <span class="tag">H9 · sair do erro</span>
+          </div>
+        </div>
+
+        <div class="painel anim" style="--i:5">
+          <div class="rot">por que é violação</div>
+          <p style="font-size:13px; line-height:1.55">
+            <b>H2:</b> o catálogo só responde ao vocabulário da prefeitura. A frase da mãe não existe no sistema. A palavra do decreto existe.<br>
+            <b>H1:</b> “0 resultados” é o fim da linha. Sem “você quis dizer”, sem sugestão de categoria, sem termo próximo. A pessoa não sabe se o serviço não existe ou se ela escreveu errado.<br>
+            <b>H9:</b> o zero-resultado é um beco. Nada na tela mostra o próximo passo.
+          </p>
+        </div>
+
+        <div class="nums anim" style="--i:6; grid-template-columns: repeat(2,1fr)">
+          <div class="cel ruim"><div class="val">195<small>/346</small></div><div class="rot">serviços devolvidos por “consulta”, porque a busca casa pedaço de palavra em qualquer ponto do texto</div></div>
+          <div class="cel ruim"><div class="val">0</div><div class="rot">sinônimos de cidadão mapeados na busca</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 09 · GYN-02 -->
+<section class="slide" aria-label="Goiânia: organograma na home">
+  <div class="miolo">
+    <p class="kicker anim" style="--i:0">GYN-02 · goiania.go.gov.br</p>
+    <h2 class="anim" style="--i:1">A home organiza o mundo pelo organograma da prefeitura</h2>
+    <p class="apoio anim" style="--i:2">A primeira tela divide tudo em Cidadão, Empresa, Servidor e Turista. É o organograma da prefeitura. Quem tem casa e quer pagar o IPTU procura em “Cidadão”. O IPTU está na aba “Empresa”.</p>
+
+    <div class="duas">
+      <div class="painel anim" style="--i:3">
+        <div class="rot">o que aparece na aba Cidadão</div>
+        <div class="tags">
+          <span class="tag">SEPLANH</span><span class="tag">IMAS</span><span class="tag">SEFIC</span><span class="tag">SMS</span><span class="tag">SME</span>
+          <span class="tag">DUAM</span><span class="tag">CAE</span><span class="tag">CEJUSC</span><span class="tag">eDOC</span>
+          <span class="tag">Anuário Estatístico</span><span class="tag">Mapa 360°</span><span class="tag">Uso do Solo</span>
+        </div>
+        <p style="font-size:12.5px; line-height:1.55; color:var(--fraca); margin-top:4px">São 16 atalhos na aba Cidadão e <b>nenhum é de saúde</b>. Nenhuma sigla é explicada em lugar nenhum da página.</p>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:12px">
+        <div class="anim" style="--i:4"><span class="sev s3">severidade 3 · grave</span></div>
+        <div class="painel anim" style="--i:5">
+          <div class="rot">heurísticas violadas</div>
+          <div class="tags">
+            <span class="tag forte">H2 · correspondência com o mundo real</span>
+            <span class="tag">H6 · reconhecer em vez de memorizar</span>
+            <span class="tag">H7 · flexibilidade e eficiência</span>
+          </div>
+          <p style="font-size:13px; line-height:1.55; margin-top:4px">
+            <b>H2:</b> a primeira tela fala a língua do decreto, não a do morador.
+            <b>H6:</b> para navegar é preciso já saber qual secretaria cuida do quê. Só quem trabalha lá sabe.
+            <b>H7:</b> as 34 categorias por assunto funcionam bem e ficam escondidas a dois cliques da home.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="nums anim" style="--i:6">
+      <div class="cel"><div class="val">161</div><div class="rot">links na home, para 381 palavras</div></div>
+      <div class="cel"><div class="val">346</div><div class="rot">serviços no catálogo, sem ordem por procura</div></div>
+      <div class="cel ok"><div class="val">34</div><div class="rot">categorias por assunto, e elas funcionam bem</div></div>
+      <div class="cel ruim"><div class="val">∞</div><div class="rot">cliques para pagar uma multa: o serviço não existe no catálogo</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 · GYN-03 e GYN-04 -->
+<section class="slide" aria-label="Goiânia: resposta escondida e links quebrados">
+  <div class="miolo">
+    <p class="kicker anim" style="--i:0">GYN-03 e GYN-04 · goiania.go.gov.br</p>
+    <h2 class="anim" style="--i:1">A resposta está na página. Atrás de um “Ler mais”.</h2>
+
+    <div class="duas">
+      <div style="display:flex; flex-direction:column; gap:12px">
+        <div class="anim" style="--i:2; display:flex; gap:10px; align-items:center">
+          <span class="sev s3">GYN-03 · severidade 3</span>
+        </div>
+        <div class="painel anim" style="--i:3">
+          <div class="rot">o caso da teleconsulta</div>
+          <p style="font-size:13px; line-height:1.55">A página do agendamento de consultas tem <b>606 palavras, seis blocos fechados e nenhum botão</b>. O telefone que marca a consulta aparece a 40% do corpo do texto, sob o rótulo <b>“Previsão e Prazo para Entrega”</b>. A mesma página lista cinco telefones diferentes, sem dizer qual serve para quê.</p>
+          <div class="tags">
+            <span class="tag forte">H8 · estética e design minimalista</span>
+            <span class="tag">H2 · mundo real</span>
+            <span class="tag">H1 · status</span>
+          </div>
+          <p style="font-size:12.5px; line-height:1.5; color:var(--fraca)">A heurística 8 cobra que o essencial não dispute espaço com o acessório. Aqui a única ação possível está enterrada num campo cujo nome não tem nada a ver com ela. E a página não diz se o serviço se resolve online ou só no balcão.</p>
+        </div>
+        <div class="nums" style="grid-template-columns: repeat(2,1fr)">
+          <div class="cel ruim anim" style="--i:4"><div class="val">30<small>%</small></div><div class="rot">dos serviços têm botão “Acessar serviço”, numa amostra de 50 dos 346</div></div>
+          <div class="cel anim" style="--i:4"><div class="val">326</div><div class="rot">palavras em média por serviço, em 5 blocos “Ler mais” fechados</div></div>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:12px">
+        <div class="anim" style="--i:5"><span class="sev s3">GYN-04 · severidade 3</span></div>
+        <div class="painel anim" style="--i:6">
+          <div class="rot">atalhos que levam a lugar nenhum</div>
+          <p style="font-size:13px; line-height:1.55"><b>2 dos 20 atalhos da home devolvem erro 404</b>, entre eles o “Calendário de Eventos”, a única resposta possível para “o que tem de interessante na cidade hoje”. A página de erro é a padrão do servidor: sem busca, sem sugestão, sem volta ao portal.</p>
+          <div class="tags">
+            <span class="tag forte">H9 · reconhecer, diagnosticar e sair do erro</span>
+            <span class="tag">H1 · status</span>
+          </div>
+        </div>
+        <div class="painel anim" style="--i:7">
+          <div class="rot">o padrão que se repete nos dois sites</div>
+          <p style="font-size:13px; line-height:1.55">Os dois falham no mesmo ponto: <b>a tela de erro é a única parte do produto que ninguém desenhou</b>. Nos dois casos ela veio da infraestrutura, firewall lá e servidor aqui, escrita para quem opera a máquina.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 · painel -->
+<section class="slide" aria-label="Painel de achados">
+  <div class="miolo">
+    <p class="kicker anim" style="--i:0">03 · painel</p>
+    <h2 class="anim" style="--i:1">Sete achados, oito heurísticas</h2>
+    <p class="apoio anim" style="--i:2">Ordenados por severidade. A primeira heurística é a principal. As outras o mesmo problema também atinge.</p>
+
+    <div class="rolagem anim" style="--i:3">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Cód.</th>
+            <th scope="col">Onde</th>
+            <th scope="col">Achado</th>
+            <th scope="col">Heurísticas</th>
+            <th scope="col">Sev.</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="grave">
+            <td class="cod">COR-01</td>
+            <td class="cod">Correios<br>home → consultor</td>
+            <td class="ach">“Quero falar com um consultor!” cai numa tela de erro em inglês, sem saída</td>
+            <td class="hs">H9 · H2 · H1 · H3</td>
+            <td><span class="sev s4">4</span></td>
+          </tr>
+          <tr class="grave">
+            <td class="cod">GYN-01</td>
+            <td class="cod">Goiânia<br>Portal de Serviços</td>
+            <td class="ach">A busca não entende o vocabulário do cidadão: “matricular filho” devolve 0</td>
+            <td class="hs">H2 · H1 · H9</td>
+            <td><span class="sev s4">4</span></td>
+          </tr>
+          <tr>
+            <td class="cod">COR-02</td>
+            <td class="cod">Correios<br>Acesso rápido</td>
+            <td class="ach">Paginação de carrossel sem carrossel: o indicador anuncia telas que não existem</td>
+            <td class="hs">H1 · H3 · H4</td>
+            <td><span class="sev s3">3</span></td>
+          </tr>
+          <tr>
+            <td class="cod">COR-03</td>
+            <td class="cod">Correios<br>rastreamento</td>
+            <td class="ach">O campo da tarefa central não tem rótulo; a instrução some ao digitar</td>
+            <td class="hs">H6 · H4 · H2</td>
+            <td><span class="sev s3">3</span></td>
+          </tr>
+          <tr>
+            <td class="cod">GYN-02</td>
+            <td class="cod">Goiânia<br>home</td>
+            <td class="ach">Navegação por organograma e siglas; IPTU fica na aba “Empresa”</td>
+            <td class="hs">H2 · H6 · H7</td>
+            <td><span class="sev s3">3</span></td>
+          </tr>
+          <tr>
+            <td class="cod">GYN-03</td>
+            <td class="cod">Goiânia<br>página de serviço</td>
+            <td class="ach">A ação útil fica atrás de “Ler mais” e sob rótulo de formulário sem relação</td>
+            <td class="hs">H8 · H2 · H1</td>
+            <td><span class="sev s3">3</span></td>
+          </tr>
+          <tr>
+            <td class="cod">GYN-04</td>
+            <td class="cod">Goiânia<br>atalhos da home</td>
+            <td class="ach">2 dos 20 atalhos devolvem 404, com página de erro padrão do servidor</td>
+            <td class="hs">H9 · H1</td>
+            <td><span class="sev s3">3</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="nota anim" style="--i:4">Nenhum achado de severidade 1 ou 2 entrou na lista. Os dois sites têm problemas cosméticos, mas aqui só entra o que impede a tarefa de terminar.</p>
+  </div>
+</section>
+
+<!-- 12 · antes / depois -->
+<section class="slide" aria-label="Antes e depois">
+  <div class="miolo">
+    <p class="kicker anim" style="--i:0">04 · redesenho</p>
+    <h2 class="anim" style="--i:1">O antes e o depois dos dois catastróficos</h2>
+
+    <div class="ad anim" style="--i:2">
+      <div class="lado antes">
+        <div class="cab">hoje · COR-01</div>
+        <div class="mock">
+          <div class="m-tit" style="color:#111; font-family:Times New Roman, serif; background:#fff; padding:10px; border-radius:5px">The requested URL was rejected.</div>
+          <div class="m-alerta">Idioma errado · sem diagnóstico · sem alternativa · sem marca</div>
+          <div class="m-txt">Único controle: <code>[Go Back]</code>, que devolve ao mesmo botão quebrado.</div>
+          <span class="m-btn fantasma" data-clique>Go Back</span>
+        </div>
+      </div>
+      <div class="lado depois">
+        <div class="cab">proposta · COR-01</div>
+        <div class="mock">
+          <div class="m-tit">Este caminho está fora do ar</div>
+          <div class="m-txt">Não conseguimos abrir o formulário de atendimento comercial agora. Você pode falar com um consultor por estes caminhos, que estão funcionando:</div>
+          <span class="m-btn" data-clique>Abrir o formulário direto</span>
+          <div class="m-txt">Ou ligue 3003 0100 (capitais). Código da falha: 1100596051, informe esse número se for pedir suporte.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ad anim" style="--i:3">
+      <div class="lado antes">
+        <div class="cab">hoje · GYN-01</div>
+        <div class="mock">
+          <div class="m-tit">Encontramos 0 resultados</div>
+          <div class="m-txt">Nenhum serviço encontrado.</div>
+          <div class="m-alerta">Fim da linha: sem sugestão, sem termo próximo, sem categoria</div>
+          <div class="m-linha"></div>
+          <div class="m-linha curta"></div>
+        </div>
+      </div>
+      <div class="lado depois">
+        <div class="cab">proposta · GYN-01</div>
+        <div class="mock">
+          <div class="m-tit">Nada com “matricular filho”. Talvez seja isto:</div>
+          <span class="m-btn" data-clique>Matrículas Web · pré-matrícula em escolas e CMEIs</span>
+          <div class="m-txt">Ou navegue por assunto, como no Portal de Serviços:</div>
+          <div class="tags">
+            <span class="tag">Saúde</span><span class="tag">Educação</span><span class="tag">Dinheiro</span><span class="tag">Trânsito</span><span class="tag">Lazer</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="painel anim" style="--i:4">
+      <div class="rot">quatro correções, em ordem de esforço</div>
+      <ol class="passos">
+        <li>Corrigir o redirecionamento do botão do consultor e escrever a tela de erro em português, com alternativa e código curto. <b>Baixo esforço, resolve um catastrófico.</b></li>
+        <li>Mapear sinônimos de cidadão na busca de Goiânia, para “matricular filho” achar Matrículas Web, e dar peso ao título na relevância. <b>Baixo esforço.</b></li>
+        <li>Nos Correios: ou ligar o carrossel, ou remover as bolinhas. Um indicador que não controla nada é pior do que indicador nenhum. E colocar um <code>&lt;label&gt;</code> no campo de rastreio. <b>Baixo esforço.</b></li>
+        <li>Subir a ação para o topo da página de serviço de Goiânia, com botão, telefone ou endereço sempre visível, fora do “Ler mais”. <b>Médio esforço.</b></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- 13 · conclusão -->
+<section class="slide" aria-label="Conclusão">
+  <div class="miolo">
+    <p class="kicker anim" style="--i:0">05 · conclusão</p>
+    <h2 class="anim" style="--i:1">Nenhum dos sete problemas é de conteúdo.<br>Todos são de porta de entrada.</h2>
+    <p class="apoio anim" style="--i:2">Os Correios têm o formulário do consultor pronto e funcionando. Goiânia descreve os seus 346 serviços com cuidado e organiza tudo em 34 categorias que acertam. Conteúdo não falta em nenhum dos dois. O que foi desenhado de dentro para fora é o caminho até ele: pelo organograma do órgão e pela língua do decreto.</p>
+
+    <div class="tres anim" style="--i:3">
+      <div class="painel">
+        <div class="rot">o que se repete</div>
+        <p style="font-size:13px; line-height:1.55">A tela de erro é a parte do produto que ninguém assume. Nos dois sites ela vem da infraestrutura e fala com quem opera o servidor.</p>
+      </div>
+      <div class="painel">
+        <div class="rot">o que custa mais barato</div>
+        <p style="font-size:13px; line-height:1.55">Os dois achados de severidade 4 saem barato: um redirecionamento e uma lista de sinônimos.</p>
+      </div>
+      <div class="painel">
+        <div class="rot">o que a heurística mostrou</div>
+        <p style="font-size:13px; line-height:1.55">Sem a régua de Nielsen, “o site é ruim”. Com ela, sete problemas com nome, lugar e prioridade, prontos para virar tarefa de quem programa.</p>
+      </div>
+    </div>
+
+    <div class="capa-meta anim" style="--i:4; margin-top:8px">
+      <div><span>disciplina</span><b>Design Gráfico e<br>Experiência do Usuário</b></div>
+      <div><span>atividade</span><b>AC2 · Oficina de<br>Auditoria Heurística</b></div>
+      <div><span>autores</span><b>Kauê Prata<br>Daniel Ubirajara</b></div>
+      <div><span>coleta</span><b>20 e 27 de<br>agosto de 2026</b></div>
+    </div>
+
+    <p class="nota anim" style="--i:5">Os achados dos Correios vêm de navegação em 27/08/2026, confirmados por inspeção do código da página: ausência de <code>.slick-track</code> e de <code>jQuery.fn.slick</code>, ausência de <code>label</code> e <code>aria-label</code> no campo <code>#objetos</code>, e reprodução do bloqueio na URL com barra dupla. Os números de Goiânia vêm de navegação registrada em 20/08/2026, com amostra sistemática de 50 dos 346 serviços. As telas desta apresentação são réplicas em HTML, feitas para reproduzir o que foi visto.</p>
+  </div>
+</section>
+
+  <nav class="regua" aria-label="Navegação da apresentação">
+    <div class="setas">
+      <button type="button" id="anterior" aria-label="Slide anterior">←</button>
+      <button type="button" id="proximo" aria-label="Próximo slide">→</button>
+    </div>
+    <div class="trilha" id="trilha"></div>
+    <span class="legenda-pitch"><i></i> rota do pitch</span>
+    <span class="contador" id="contador">01 / 13</span>
+  </nav>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const slides = Array.from(document.querySelectorAll(".slide"));
+  const trilha = document.getElementById("trilha");
+  const contador = document.getElementById("contador");
+  const total = slides.length;
+  const rotaPitch = new Set([0, 3, 4, 5, 7, 11, 12]);
+  let atual = 0;
+
+  const marcadores = slides.map((slide, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.setAttribute("aria-label", "Ir para o slide " + (i + 1) + ": " + (slide.getAttribute("aria-label") || ""));
+    if (rotaPitch.has(i)) b.setAttribute("data-pitch", "");
+    b.addEventListener("click", () => irPara(i));
+    trilha.appendChild(b);
+    return b;
+  });
+
+  function irPara(i) {
+    atual = Math.max(0, Math.min(total - 1, i));
+    slides.forEach((s, n) => s.classList.toggle("ativa", n === atual));
+    marcadores.forEach((m, n) => m.setAttribute("aria-current", String(n === atual)));
+    contador.textContent = String(atual + 1).padStart(2, "0") + " / " + String(total).padStart(2, "0");
+    window.scrollTo({ top: 0, behavior: "auto" });
+    if (typeof tocaDoSlide === "function") tocaDoSlide();
+  }
+
+  /* ---- jornadas animadas ---- */
+
+  const semMovimento = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const CURSOR_SVG =
+    '<svg class="cursor-falso" viewBox="0 0 15 21" aria-hidden="true">' +
+    '<path d="M1 1l12 11-5.3.6 3 5.6-2.6 1.4-3-5.6-4.1 3.4z" fill="#fff" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/>' +
+    '</svg><span class="pulso" aria-hidden="true"></span>';
+
+  function criarCursor(base) {
+    if (!base.querySelector(":scope > .cursor-falso")) {
+      base.classList.add("com-cursor");
+      base.insertAdjacentHTML("beforeend", CURSOR_SVG);
+    }
+    const cursor = base.querySelector(":scope > .cursor-falso");
+    const pulso = base.querySelector(":scope > .pulso");
+    let relogio = null;
+
+    function ir(alvo) {
+      clearTimeout(relogio);
+      if (!alvo) { cursor.classList.remove("vis"); return; }
+      const a = alvo.getBoundingClientRect();
+      const b = base.getBoundingClientRect();
+      if (!a.width && !a.height) { cursor.classList.remove("vis"); return; }
+      const x = a.left - b.left + a.width / 2;
+      const y = a.top - b.top + a.height / 2;
+      cursor.style.transform = "translate3d(" + x + "px," + y + "px,0)";
+      pulso.style.transform = "translate3d(" + x + "px," + y + "px,0)";
+      cursor.classList.add("vis");
+      relogio = setTimeout(() => {
+        pulso.classList.remove("bate");
+        void pulso.offsetWidth;
+        pulso.classList.add("bate");
+      }, semMovimento ? 60 : 760);
+    }
+
+    function esconde() { clearTimeout(relogio); cursor.classList.remove("vis"); }
+
+    return { ir, esconde };
+  }
+
+  function criarJornada(raiz) {
+    const quadros = Array.from(raiz.querySelectorAll(".quadro"));
+    const passos = Array.from(raiz.querySelectorAll(".passos-j li"));
+    const preenche = raiz.querySelector(".barra-j i");
+    const tempo = Number(raiz.dataset.tempo) || 2400;
+    let indice = 0;
+    let relogio = null;
+
+    const cursor = criarCursor(raiz.querySelector(".palco-j"));
+
+    function mostra(n) {
+      indice = n;
+      quadros.forEach((q, k) => q.classList.toggle("on", k === n));
+      cursor.ir(quadros[n].querySelector("[data-clique]"));
+      passos.forEach((p, k) => {
+        p.classList.toggle("on", k === n);
+        p.classList.toggle("feito", k < n);
+      });
+      if (preenche) preenche.style.width = ((n + 1) / quadros.length) * 100 + "%";
+    }
+
+    function passo() {
+      if (indice + 1 < quadros.length) {
+        mostra(indice + 1);
+        relogio = setTimeout(passo, tempo);
+      }
+    }
+
+    function toca() {
+      clearTimeout(relogio);
+      mostra(0);
+      if (!semMovimento) relogio = setTimeout(passo, tempo);
+    }
+
+    function para() { clearTimeout(relogio); }
+
+    passos.forEach((p, k) => {
+      const b = p.querySelector("button");
+      if (b) b.addEventListener("click", () => { para(); mostra(k); });
+    });
+    const rep = raiz.querySelector(".repetir");
+    if (rep) rep.addEventListener("click", toca);
+
+    mostra(0);
+    return { raiz, toca, para };
+  }
+
+  const jornadas = Array.from(document.querySelectorAll("[data-jornada]")).map(criarJornada);
+
+  /* ---- demo: o carrossel que não reage ---- */
+
+  function criarDemoMorta(tela) {
+    const cursor = tela.querySelector(".cursor-falso");
+    const pulso = tela.querySelector(".pulso");
+    const bolinhas = Array.from(tela.querySelectorAll(".bolinhas i"));
+    const marcador = tela.closest(".slide").querySelector("[data-tentativas]");
+    let n = 0;
+    let relogio = null;
+
+    function posiciona(alvo) {
+      const a = alvo.getBoundingClientRect();
+      const base = tela.getBoundingClientRect();
+      const x = a.left - base.left + a.width / 2;
+      const y = a.top - base.top + a.height / 2;
+      cursor.style.transform = "translate3d(" + x + "px," + y + "px,0)";
+      pulso.style.transform = "translate3d(" + x + "px," + y + "px,0)";
+      return { x, y };
+    }
+
+    const LIMITE = 6;
+
+    function bate() {
+      const alvo = bolinhas[n % bolinhas.length];
+      if (!alvo || n >= LIMITE) { cursor.classList.remove("vis"); return; }
+      cursor.classList.add("vis");
+      posiciona(alvo);
+      setTimeout(() => {
+        pulso.classList.remove("bate");
+        void pulso.offsetWidth;
+        pulso.classList.add("bate");
+        n += 1;
+        if (marcador) marcador.textContent = String(n);
+      }, semMovimento ? 0 : 820);
+      relogio = setTimeout(bate, 2200);
+    }
+
+    function toca() {
+      clearTimeout(relogio);
+      n = 0;
+      if (marcador) marcador.textContent = "0";
+      cursor.classList.remove("vis");
+      relogio = setTimeout(bate, 700);
+    }
+
+    function para() { clearTimeout(relogio); cursor.classList.remove("vis"); }
+
+    return { raiz: tela, toca, para };
+  }
+
+  const demos = Array.from(document.querySelectorAll("[data-demo-morta]")).map(criarDemoMorta);
+
+  /* ---- cursor nos exemplos soltos, fora das jornadas ---- */
+
+  function criarSolo(base, alvos) {
+    const cursor = criarCursor(base);
+    let i = 0;
+    let voltas = 0;
+    let relogio = null;
+    const LIMITE = 4;
+
+    function passo() {
+      if (voltas >= LIMITE) { cursor.esconde(); return; }
+      cursor.ir(alvos[i % alvos.length]);
+      i += 1;
+      voltas += 1;
+      relogio = setTimeout(passo, 2400);
+    }
+
+    function toca() { clearTimeout(relogio); i = 0; voltas = 0; relogio = setTimeout(passo, 600); }
+    function para() { clearTimeout(relogio); cursor.esconde(); }
+
+    return { raiz: base, toca, para };
+  }
+
+  const grupos = new Map();
+  document.querySelectorAll("[data-clique]").forEach((alvo) => {
+    if (alvo.closest("[data-jornada]")) return;
+    const base = alvo.closest(".mock, .painel, .captura");
+    if (!base) return;
+    if (!grupos.has(base)) grupos.set(base, []);
+    grupos.get(base).push(alvo);
+  });
+  const solos = Array.from(grupos, ([base, alvos]) => criarSolo(base, alvos));
+
+  const animados = jornadas.concat(demos, solos);
+
+  function tocaDoSlide() {
+    animados.forEach((a) => a.para());
+    animados.forEach((a) => {
+      if (slides[atual].contains(a.raiz)) setTimeout(a.toca, 320);
+    });
+  }
+
+  document.getElementById("anterior").addEventListener("click", () => irPara(atual - 1));
+  document.getElementById("proximo").addEventListener("click", () => irPara(atual + 1));
+
+  document.addEventListener("keydown", (e) => {
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    if (e.key === "ArrowRight" || e.key === "PageDown") { e.preventDefault(); irPara(atual + 1); }
+    else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); irPara(atual - 1); }
+    else if (e.key === "Home") { e.preventDefault(); irPara(0); }
+    else if (e.key === "End") { e.preventDefault(); irPara(total - 1); }
+  });
+
+  irPara(0);
+})();
+</script>
+
+</body>
+</html>

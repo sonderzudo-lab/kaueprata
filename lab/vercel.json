@@ -1,0 +1,82 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "trailingSlash": true,
+  "redirects": [
+    {
+      "source": "/analiseUXsitegoiania",
+      "destination": "/analise-ux-goiania/",
+      "permanent": false
+    },
+    {
+      "source": "/analiseUXsitegoiania/",
+      "destination": "/analise-ux-goiania/",
+      "permanent": false
+    },
+    {
+      "source": "/analiseuxsitegoiania",
+      "destination": "/analise-ux-goiania/",
+      "permanent": false
+    },
+    {
+      "source": "/analiseuxsitegoiania/",
+      "destination": "/analise-ux-goiania/",
+      "permanent": false
+    },
+    {
+      "source": "/goiania",
+      "destination": "/analise-ux-goiania/",
+      "permanent": false
+    },
+    {
+      "source": "/goiania/",
+      "destination": "/analise-ux-goiania/",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; media-src 'self' blob:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+      ]
+    },
+    {
+      "source": "/assets/v2/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, stale-while-revalidate=86400"
+        }
+      ]
+    }
+  ]
+}

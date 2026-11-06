@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    (() => {
+      let theme = "dark";
+      try { theme = localStorage.getItem("kp-theme") === "light" ? "light" : "dark"; } catch (_) {}
+      document.documentElement.dataset.theme = theme;
+    })();
+  </script>
+  <script>
+    (() => {
+      let savedLanguage = null;
+      try { savedLanguage = localStorage.getItem("kp-lang"); } catch (_) {}
+      const prefersPortuguese = savedLanguage
+        ? savedLanguage === "pt"
+        : (navigator.language || "en").toLowerCase().startsWith("pt");
+      if (prefersPortuguese) location.replace("/pt/");
+    })();
+  </script>
+
+  <title>Lab · Kauê Prata</title>
+  <meta name="description" content="Class projects, games and experiments developed by Kauê Prata.">
+  <meta name="author" content="Kauê Prata">
+  <meta name="theme-color" content="#0F1012">
+  <link rel="canonical" href="https://lab.kaueprata.com/">
+  <link rel="alternate" hreflang="en" href="https://lab.kaueprata.com/">
+  <link rel="alternate" hreflang="pt-BR" href="https://lab.kaueprata.com/pt/">
+  <link rel="alternate" hreflang="x-default" href="https://lab.kaueprata.com/">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Lab · Kauê Prata">
+  <meta property="og:url" content="https://lab.kaueprata.com/">
+  <meta property="og:title" content="Lab · Kauê Prata">
+  <meta property="og:description" content="Class projects, games and experiments developed by Kauê Prata.">
+  <meta property="og:image" content="https://lab.kaueprata.com/assets/og-v2.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Lab by Kauê Prata, a collection of projects and experiments">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="pt_BR">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Lab · Kauê Prata">
+  <meta name="twitter:description" content="Class projects, games and experiments developed by Kauê Prata.">
+  <meta name="twitter:image" content="https://lab.kaueprata.com/assets/og-v2.jpg">
+
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preload" href="/assets/v2/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/v2/site.css?v=5">
+  <noscript><style>.app-list{display:none}.noscript-app{display:block}</style></noscript>
+</head>
+<body>
+  <a class="skip" href="#apps">skip to projects</a>
+
+  <header class="topbar">
+    <a class="brand" href="/">k.prata · lab</a>
+    <nav class="topnav" aria-label="Main navigation">
+      <a class="back-home" href="https://kaueprata.com/">site <span aria-hidden="true">↗</span></a>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to light theme" title="Switch to light theme" aria-pressed="false">
+        <span class="theme-icon theme-icon-moon" aria-hidden="true"></span>
+        <span class="theme-icon theme-icon-sun" aria-hidden="true"></span>
+      </button>
+      <div class="lang" role="group" aria-label="Language">
+        <a class="lang-btn" href="/pt/" hreflang="pt-BR" data-lang="pt">PT</a>
+        <span class="lang-sep" aria-hidden="true">/</span>
+        <span class="lang-btn" aria-current="page">EN</span>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-visual" aria-hidden="true">
+        <canvas id="lab-canvas"></canvas>
+        <span class="shape-label" id="shape-label"></span>
+      </div>
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <p class="kicker">// laboratory</p>
+          <h1 id="hero-title">Ideas in motion.</h1>
+          <p class="hero-line">A place for class projects, games and experiments that can be opened, tested and improved.</p>
+          <a class="hero-link" href="#apps">explore projects <span aria-hidden="true">↓</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="apps" aria-labelledby="apps-title">
+      <div class="section-row">
+        <div class="section-heading">
+          <h2 class="section-label" id="apps-title">01&nbsp;&nbsp;projects</h2>
+          <span class="app-count" id="app-count" aria-live="polite">loading</span>
+        </div>
+
+        <div class="section-body">
+          <div class="toolbar">
+            <label for="app-search">find a project</label>
+            <div class="search-wrap">
+              <input id="app-search" type="search" placeholder="search by name or technology" autocomplete="off">
+              <span class="search-key" aria-hidden="true">/</span>
+            </div>
+          </div>
+
+          <div class="app-list" id="app-list"></div>
+          <p class="empty" id="empty" hidden>No projects found.</p>
+
+          <div class="noscript-app">
+            <article class="app-card">
+              <a class="app-card-link" href="/tabuada/">
+                <div class="app-topline"><span>001</span><span class="status">available</span></div>
+                <h3>Math Race</h3>
+                <p>Choose a multiplication table, race through the correct answers, and unlock new tracks and runners.</p>
+                <span class="open-app">open project ↗</span>
+              </a>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section note" aria-labelledby="about-title">
+      <div class="section-row">
+        <h2 class="section-label" id="about-title">02&nbsp;&nbsp;about</h2>
+        <div class="section-body note-body">
+          <p>This is where I publish class assignments, prototypes and experiments. Each project has its own route and stays available at the same address.</p>
+          <a href="https://kaueprata.com/">more about me <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© 2026 Kauê Prata · São Paulo, BR</p>
+    <span>built to experiment</span>
+  </footer>
+
+  <script src="/assets/v2/apps.js" defer></script>
+  <script src="/assets/v2/site.js?v=4" defer></script>
+</body>
+</html>

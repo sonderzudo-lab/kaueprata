@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>No lugar do cidadão · Análise de usabilidade</title>
+<meta name="description" content="Estudo de usabilidade do site da Prefeitura de Goiânia: cinco perguntas de morador comum sobre saúde, educação, impostos, esporte e cultura, percorridas passo a passo.">
+<meta name="theme-color" content="#0b0d0f">
+<link rel="canonical" href="https://lab.kaueprata.com/analise-ux-goiania/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="No lugar do cidadão">
+<meta property="og:description" content="Análise de usabilidade do site da Prefeitura de Goiânia: cinco perguntas de morador comum, percorridas passo a passo.">
+<meta property="og:url" content="https://lab.kaueprata.com/analise-ux-goiania/">
+<meta property="og:image" content="https://lab.kaueprata.com/assets/og-v2.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<style>
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/assets/v2/fonts/space-grotesk-latin.woff2") format("woff2");
+  font-weight: 400 700; font-display: swap;
+}
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/assets/v2/fonts/space-grotesk-latin-ext.woff2") format("woff2");
+  font-weight: 400 700; font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+1EF2-1EFF, U+20A0-20AB, U+2C60-2C7F;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/assets/v2/fonts/jetbrains-mono-latin.woff2") format("woff2");
+  font-weight: 400 500; font-display: swap;
+}
+
+:root {
+  color-scheme: dark;
+  --fundo: #0b0d0f;
+  --painel: #14171a;
+  --painel-alto: #191d21;
+  --linha: #252a30;
+  --linha-forte: #343a42;
+  --tinta: #eceeec;
+  --corpo: #c9ccca;
+  --fraca: #8d9298;
+  --ciano: #1ec8e0;
+  --gyn-navy: #003856;
+  --gyn-teal: #2a454a;
+  --gyn-laranja: #f36e22;
+  --bom: #3fbf7f;
+  --alerta: #ffb020;
+  --ruim: #ff5f56;
+  --sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  --ease: cubic-bezier(.22, .61, .36, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--fundo); color: var(--tinta);
+  font-family: var(--sans); overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#fundo-canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; opacity: .5; }
+
+#palco {
+  position: relative; z-index: 1;
+  height: 100%; height: 100dvh;
+  display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.topo {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 12px clamp(16px, 4vw, 44px);
+  border-bottom: 1px solid var(--linha);
+  font-family: var(--mono); font-size: 12px; color: var(--fraca);
+}
+.topo .alvo { color: var(--tinta); }
+.topo .alvo b { color: var(--ciano); font-weight: 500; }
+.topo .selo { display: inline-flex; align-items: center; gap: 7px; padding: 4px 11px; border: 1px solid var(--linha-forte); border-radius: 999px; }
+.ponto-vivo { width: 6px; height: 6px; border-radius: 50%; background: var(--ciano); animation: pulsa 2.2s var(--ease) infinite; }
+@keyframes pulsa { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .3; transform: scale(.65); } }
+.topo .contador b { color: var(--tinta); font-weight: 500; }
+
+.cenas { position: relative; overflow: hidden; }
+.cena {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: clamp(15px, 2.8vh, 32px) clamp(16px, 4vw, 44px);
+  opacity: 0; visibility: hidden; transform: translateY(16px);
+  transition: opacity .5s var(--ease), transform .6s var(--ease), visibility .5s;
+  overflow-y: auto; overscroll-behavior: contain;
+}
+.cena.ativa { opacity: 1; visibility: visible; transform: none; }
+.cena.tem-mais::after {
+  content: "role para ver o resto ↓";
+  position: sticky; bottom: 0; align-self: center; flex: none;
+  margin-top: 10px; padding: 14px 14px 4px;
+  font-family: var(--mono); font-size: 10.5px; color: var(--fraca);
+  background: linear-gradient(180deg, transparent, var(--fundo) 55%);
+  pointer-events: none;
+}
+.miolo { width: 100%; max-width: 1080px; margin: 0 auto; }
+
+.kicker { font-family: var(--mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ciano); margin: 0 0 9px; }
+h1, h2 { margin: 0 0 10px; font-weight: 700; letter-spacing: -.025em; line-height: 1.07; }
+h1 { font-size: clamp(30px, 5.4vw, 58px); }
+h2 { font-size: clamp(21px, 3.2vw, 34px); }
+.linha-apoio { margin: 0 0 clamp(12px, 2vh, 22px); max-width: 66ch; color: var(--corpo); font-size: clamp(13px, 1.5vw, 15.5px); line-height: 1.55; }
+.linha-apoio b { color: var(--tinta); font-weight: 500; }
+.nota-rodape { margin: clamp(11px, 1.8vh, 18px) 0 0; font-family: var(--mono); font-size: 11px; color: var(--fraca); line-height: 1.65; }
+code { font-family: var(--mono); font-size: .88em; }
+
+[data-anim] {
+  opacity: 0; transform: translateY(13px);
+  transition: opacity .55s var(--ease), transform .55s var(--ease);
+  transition-delay: calc(var(--i, 0) * 85ms + 100ms);
+}
+.cena.ativa [data-anim] { opacity: 1; transform: none; }
+
+/* ---------- capa ---------- */
+.capa-grade { display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(20px, 4vw, 50px); align-items: center; }
+.capa-meta { display: grid; gap: 8px; font-family: var(--mono); font-size: 12px; color: var(--fraca); }
+.capa-meta div { display: flex; justify-content: space-between; gap: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--linha); }
+.capa-meta span:last-child { color: var(--tinta); text-align: right; }
+
+.perguntas { margin: 0; padding: 0; list-style: none; display: grid; gap: 9px; }
+.perguntas li {
+  padding: 10px 14px; border: 1px solid var(--linha-forte);
+  border-radius: 12px 12px 12px 3px; background: var(--painel);
+  font-size: 13.5px; color: var(--tinta); line-height: 1.35; opacity: 0;
+}
+.cena.ativa .perguntas li { animation: balaoIn .5s var(--ease) both; animation-delay: calc(var(--d) * 1s + .5s); }
+@keyframes balaoIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.perguntas .area-p {
+  display: block; font-family: var(--mono); font-size: 9.5px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ciano); margin-bottom: 4px;
+}
+
+/* ---------- blocos de texto ---------- */
+.metodo { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1px; background: var(--linha); border: 1px solid var(--linha); border-radius: 12px; overflow: hidden; }
+.metodo .bloco { background: var(--painel); padding: 14px 16px; }
+.metodo .num { font-family: var(--mono); font-size: 11px; color: var(--ciano); letter-spacing: .1em; }
+.metodo h3 { margin: 7px 0 6px; font-size: 15px; letter-spacing: -.01em; }
+.metodo p { margin: 0; font-size: 12.6px; color: var(--corpo); line-height: 1.5; }
+
+/* ---------- matriz de resultados ---------- */
+.matriz { display: grid; gap: 1px; background: var(--linha); border: 1px solid var(--linha); border-radius: 12px; overflow: hidden; }
+.mrow {
+  background: var(--painel); display: grid;
+  grid-template-columns: 26px 112px 1fr 58px 132px; gap: 12px; align-items: center;
+  padding: 10px 15px; font-size: 12.8px;
+}
+.mrow.cab { background: var(--painel-alto); font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--fraca); }
+.mrow .area { color: var(--tinta); font-weight: 500; }
+.mrow .tarefa { color: var(--corpo); }
+.mrow .cliques { font-family: var(--mono); font-size: 12.5px; color: var(--fraca); }
+.mrow .icone { width: 21px; height: 21px; }
+.veredito { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10.5px; }
+.veredito .bolinha { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.v-ok { color: var(--bom); } .v-ok .bolinha { background: var(--bom); }
+.v-parcial { color: var(--alerta); } .v-parcial .bolinha { background: var(--alerta); }
+.v-falha { color: var(--ruim); } .v-falha .bolinha { background: var(--ruim); }
+
+/* ---------- réplica navegável do site ---------- */
+.jornada-viva { display: grid; grid-template-columns: 1.45fr .55fr; gap: clamp(13px, 2.2vw, 24px); align-items: start; }
+
+.navegador { border: 1px solid var(--linha-forte); border-radius: 10px; overflow: hidden; background: #e9edee; box-shadow: 0 14px 36px rgba(0, 0, 0, .45); }
+.nav-barra { display: flex; align-items: center; gap: 9px; padding: 6px 9px; background: #1b2024; }
+.nav-bolas { display: flex; gap: 4px; }
+.nav-bolas i { width: 7px; height: 7px; border-radius: 50%; background: #3a4046; display: block; }
+.nav-url { flex: 1; font-family: var(--mono); font-size: 9.5px; color: #99a0a6; background: #0f1214; border-radius: 5px; padding: 4px 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav-tela { position: relative; height: clamp(230px, 36vh, 292px); overflow: hidden; background: #f2f4f4; }
+
+.quadro { position: absolute; inset: 0; opacity: 0; transition: opacity .3s var(--ease); font-family: Poppins, var(--sans); }
+.quadro.on { opacity: 1; }
+
+.cursor { position: absolute; left: 0; top: 0; z-index: 9; pointer-events: none; transition: transform .7s cubic-bezier(.4, 0, .2, 1); }
+.cursor svg { display: block; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .55)); }
+.cursor::after { content: ""; position: absolute; left: -9px; top: -9px; width: 28px; height: 28px; border-radius: 50%; border: 2px solid #f36e22; opacity: 0; }
+.cursor.clicando::after { animation: toque .55s ease-out; }
+@keyframes toque { from { transform: scale(.25); opacity: 1; } to { transform: scale(1.35); opacity: 0; } }
+
+.g-topo { background: #003856; height: 23px; display: flex; align-items: center; padding: 0 9px; gap: 9px; }
+.g-logo { width: 46px; height: 10px; background: #fff; border-radius: 2px; opacity: .92; }
+.g-menu { display: flex; gap: 8px; margin-left: auto; }
+.g-menu span { font-size: 7px; color: #cfe0e8; }
+.g-menu span.mira { color: #fff; border-bottom: 1.5px solid #f36e22; padding-bottom: 1px; }
+.g-abas { display: flex; gap: 1px; background: #d9dfe0; }
+.g-abas span { flex: 1; text-align: center; font-size: 7.5px; padding: 5px 0; background: #e6eaea; color: #2a454a; }
+.g-abas span.sel { background: #f36e22; color: #fff; font-weight: 600; }
+.g-grade { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; padding: 8px 9px; }
+.g-item { background: #fff; border-radius: 4px; height: 31px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 5.5px; color: #2a454a; text-align: center; line-height: 1.15; padding: 2px; }
+.g-item i { width: 10px; height: 10px; border-radius: 2px; background: #f36e22; display: block; opacity: .78; }
+.g-item.marcado { outline: 2px solid #f36e22; outline-offset: -1px; }
+.g-item.apagado { opacity: .4; }
+
+.g-serv { display: grid; grid-template-columns: 102px 1fr; gap: 8px; padding: 8px 9px; }
+.g-busca { background: #f36e22; border-radius: 5px; padding: 6px; }
+.g-busca .rot { font-size: 7px; color: #fff; font-weight: 700; margin-bottom: 4px; }
+.g-campo { background: #fff; border-radius: 4px; height: 16px; font-size: 7px; color: #333; display: flex; align-items: center; padding: 0 5px; overflow: hidden; white-space: nowrap; }
+.g-campo.vazio { color: #a8b0b2; }
+.g-filtros { margin-top: 5px; background: #fff; border-radius: 5px; padding: 6px; display: grid; gap: 3px; }
+.g-filtros .ft { font-size: 6.5px; font-weight: 700; color: #12262c; margin-bottom: 1px; }
+.g-filtros span { font-size: 6px; color: #55666a; display: flex; gap: 4px; align-items: center; }
+.g-filtros span::before { content: ""; width: 5px; height: 5px; border-radius: 50%; border: 1px solid #b6c0c2; flex: none; }
+.g-filtros span.sel { color: #f36e22; font-weight: 700; }
+.g-filtros span.sel::before { border-color: #f36e22; background: #f36e22; }
+
+.g-contagem { font-size: 7.5px; color: #2a454a; margin-bottom: 4px; }
+.g-contagem b { color: #12262c; }
+.g-cards { display: grid; gap: 4px; }
+.g-card { background: #fff; border-radius: 5px; padding: 5px 7px; display: grid; grid-template-columns: 14px 1fr; gap: 7px; align-items: center; }
+.g-card i { width: 14px; height: 14px; border-radius: 3px; background: #fdeadc; }
+.g-card .tt { font-size: 7.5px; font-weight: 600; color: #12262c; line-height: 1.25; display: block; }
+.g-card .ds { font-size: 6px; color: #748387; margin-top: 1px; display: block; }
+.g-card.destaque { outline: 2px solid #3fbf7f; outline-offset: -1px; }
+.g-card.errado .tt { color: #8b9599; }
+.g-vazio { background: #fff; border-radius: 5px; padding: 22px 10px; text-align: center; font-size: 8px; color: #8a9a9e; }
+
+.g-pagina { display: grid; grid-template-columns: 90px 1fr; gap: 8px; padding: 8px 9px; }
+.g-side { background: #fff; border-radius: 5px; padding: 6px; font-size: 5.7px; color: #6a797d; line-height: 1.55; }
+.g-side b { display: block; font-size: 6.5px; color: #12262c; margin-bottom: 3px; }
+.g-corpo { display: grid; gap: 4px; align-content: start; }
+.g-secao { background: #fff; border-radius: 5px; padding: 5px 7px; }
+.g-secao .h { font-size: 7.3px; font-weight: 700; color: #12262c; border-left: 3px solid #f36e22; padding-left: 5px; margin-bottom: 3px; }
+.g-secao .txt { font-size: 6px; color: #6a797d; line-height: 1.55; }
+.g-secao.foco { outline: 2px solid #ff5f56; outline-offset: -1px; }
+.g-secao.foco-bom { outline: 2px solid #3fbf7f; outline-offset: -1px; }
+.g-lermais { font-size: 6px; color: #f36e22; font-weight: 700; margin-top: 2px; }
+.g-botao { background: #f36e22; color: #fff; font-size: 7.5px; font-weight: 700; border-radius: 4px; padding: 5px 9px; display: inline-block; }
+.g-botao.verde { background: #2f9e63; }
+
+.g-nota { position: absolute; right: 7px; bottom: 7px; background: rgba(11, 13, 15, .94); border: 1px solid var(--linha-forte); border-radius: 7px; padding: 6px 9px; font-family: var(--mono); font-size: 9.5px; color: var(--corpo); max-width: 64%; line-height: 1.45; }
+.g-nota.ruim { border-color: rgba(255, 95, 86, .55); color: #ffb3ae; }
+.g-nota.bom { border-color: rgba(63, 191, 127, .55); color: #a5e8c5; }
+
+.trilha-passos { margin: 0; padding: 0; list-style: none; }
+.trilha-passos li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; align-items: start; padding: 6px 0; border-bottom: 1px solid var(--linha); font-size: 11.8px; color: var(--corpo); line-height: 1.4; }
+.trilha-passos .n { font-family: var(--mono); font-size: 10px; color: var(--fraca); padding-top: 1px; }
+.trilha-passos li.ruim .n { color: var(--ruim); }
+.trilha-passos li.bom .n { color: var(--bom); }
+.trilha-passos b { color: var(--tinta); font-weight: 500; }
+.btn-replay { margin-top: 11px; }
+
+/* ---------- lista de resultados ---------- */
+.serp { display: grid; gap: 1px; background: var(--linha); border: 1px solid var(--linha); border-radius: 10px; overflow: hidden; }
+.serp .item {
+  background: var(--painel); padding: 9px 14px; display: grid;
+  grid-template-columns: 24px 1fr auto; gap: 12px; align-items: center; font-size: 12.8px; color: var(--corpo);
+}
+.serp .pos { font-family: var(--mono); font-size: 11px; color: var(--fraca); }
+.serp .tag { font-family: var(--mono); font-size: 10.5px; color: var(--ruim); }
+.serp .item.certo { background: rgba(63, 191, 127, .09); }
+.serp .item.certo .tag { color: var(--bom); }
+.serp .item.certo span:nth-child(2) { color: var(--tinta); }
+
+/* ---------- barras de busca ---------- */
+.termos { display: grid; gap: 8px; }
+.termo { display: grid; grid-template-columns: 150px 1fr 46px; gap: 13px; align-items: center; font-size: 13px; }
+.termo .q { font-family: var(--mono); font-size: 12px; color: var(--tinta); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.termo .faixa { height: 9px; border-radius: 999px; background: var(--painel-alto); border: 1px solid var(--linha); overflow: hidden; }
+.termo .preen { height: 100%; width: 0; border-radius: 999px; transition: width 1.1s var(--ease); transition-delay: calc(var(--i) * 110ms + 260ms); }
+.cena.ativa .termo .preen { width: var(--w); }
+.termo .n { font-family: var(--mono); font-size: 12px; text-align: right; color: var(--fraca); }
+
+/* ---------- números ---------- */
+.numeros { display: grid; grid-template-columns: repeat(auto-fit, minmax(146px, 1fr)); gap: 1px; background: var(--linha); border: 1px solid var(--linha); border-radius: 12px; overflow: hidden; }
+.numeros .cel { background: var(--painel); padding: 14px 16px; }
+.numeros .val { font-family: var(--mono); font-size: clamp(20px, 2.8vw, 28px); font-weight: 500; letter-spacing: -.02em; line-height: 1.12; }
+.numeros .val small { font-size: .46em; color: var(--fraca); margin-left: 3px; }
+.numeros .rot { margin-top: 5px; font-size: 11.8px; color: var(--fraca); line-height: 1.4; }
+.numeros .cel.destaque .val { color: var(--gyn-laranja); }
+.numeros .cel.ruim .val { color: var(--ruim); }
+.numeros .cel.verde .val { color: var(--bom); }
+
+/* ---------- caixa de desfecho ---------- */
+.resultado-caixa {
+  display: grid; grid-template-columns: auto 1fr; gap: 15px; align-items: center;
+  margin-top: clamp(12px, 2vh, 20px); padding: 13px 16px; border-radius: 12px;
+  border: 1px solid rgba(255, 95, 86, .3);
+  background: linear-gradient(90deg, rgba(255, 95, 86, .1), transparent);
+}
+.resultado-caixa.positiva { border-color: rgba(63, 191, 127, .3); background: linear-gradient(90deg, rgba(63, 191, 127, .1), transparent); }
+.resultado-caixa .marca { font-size: 24px; line-height: 1; }
+.resultado-caixa h3 { margin: 0 0 4px; font-size: 14.5px; }
+.resultado-caixa p { margin: 0; font-size: 12.8px; color: var(--corpo); line-height: 1.5; }
+
+/* ---------- antes e depois ---------- */
+.comparacao { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(14px, 2.6vw, 28px); }
+.lado h3 { margin: 0 0 9px; font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+.lado.antes h3 { color: var(--ruim); }
+.lado.depois h3 { color: var(--bom); }
+.mock { border: 1px solid var(--linha); border-radius: 10px; background: var(--painel); padding: 11px; display: grid; gap: 7px; }
+.mock .faixa-topo { height: 15px; border-radius: 4px; background: var(--gyn-navy); }
+.mock .abas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.mock .abas span { height: 20px; border-radius: 4px; background: var(--gyn-teal); }
+.mock .grade-ic { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.mock .grade-ic span { height: 26px; border-radius: 4px; background: var(--linha-forte); }
+.mock .cards6 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.mock .cards6 span {
+  height: 38px; border-radius: 6px; background: rgba(63, 191, 127, .16);
+  border: 1px solid rgba(63, 191, 127, .3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9.5px; font-family: var(--mono); color: #a5e8c5; text-align: center; line-height: 1.2;
+}
+.mock .busca-grande { height: 29px; border-radius: 6px; border: 1px solid var(--ciano); background: rgba(30, 200, 224, .1); display: flex; align-items: center; padding: 0 9px; font-family: var(--mono); font-size: 9.5px; color: var(--ciano); }
+.lado ul { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 5px; }
+.lado li { font-size: 12.2px; color: var(--corpo); line-height: 1.45; padding-left: 15px; position: relative; }
+.lado li::before { content: "›"; position: absolute; left: 0; color: var(--fraca); font-family: var(--mono); font-size: 12px; }
+
+/* ---------- recomendações ---------- */
+.recos { display: grid; gap: 1px; background: var(--linha); border: 1px solid var(--linha); border-radius: 12px; overflow: hidden; }
+.reco { background: var(--painel); padding: 10px 15px; display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; }
+.reco .idx { font-family: var(--mono); font-size: 11px; color: var(--ciano); }
+.reco .txt { font-size: 12.8px; color: var(--corpo); line-height: 1.45; }
+.reco .txt b { color: var(--tinta); font-weight: 500; }
+.reco .esf { font-family: var(--mono); font-size: 11px; color: var(--fraca); white-space: nowrap; }
+
+/* ---------- créditos ---------- */
+.creditos { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px; background: var(--linha); border: 1px solid var(--linha); border-radius: 12px; overflow: hidden; }
+.creditos div { background: var(--painel); padding: 13px 16px; }
+.creditos .r { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--fraca); }
+.creditos .v { margin-top: 6px; font-size: 14px; color: var(--tinta); line-height: 1.4; }
+
+/* ---------- controles ---------- */
+.controles { position: relative; display: flex; align-items: center; gap: clamp(8px, 1.6vw, 14px); padding: 10px clamp(16px, 4vw, 44px); border-top: 1px solid var(--linha); }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  height: 32px; min-width: 32px; padding: 0 11px;
+  border: 1px solid var(--linha-forte); border-radius: 8px; background: transparent;
+  color: var(--corpo); font-family: var(--mono); font-size: 12px; cursor: pointer;
+  transition: border-color .2s, color .2s;
+}
+.btn:hover { border-color: var(--ciano); color: var(--ciano); }
+.btn:focus-visible { outline: 2px solid var(--ciano); outline-offset: 2px; }
+.dica { font-family: var(--mono); font-size: 11px; color: var(--fraca); }
+.pontos { display: flex; gap: 5px; margin-left: auto; flex-wrap: wrap; }
+.pontos button { width: 22px; height: 4px; border-radius: 999px; border: 0; padding: 0; background: var(--linha-forte); cursor: pointer; transition: background .3s; }
+.pontos button[aria-current="true"] { background: var(--ciano); }
+.progresso { position: absolute; left: 0; right: 0; top: -1px; height: 2px; }
+.progresso i { display: block; height: 100%; width: 0; background: var(--ciano); }
+
+@media (max-width: 980px) {
+  .jornada-viva { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) {
+  .capa-grade, .comparacao { grid-template-columns: 1fr; }
+  .cena { justify-content: flex-start; padding-top: 20px; }
+  .dica { display: none; }
+  .mrow { grid-template-columns: 22px 1fr 128px; row-gap: 4px; font-size: 12.2px; }
+  .mrow .tarefa { grid-column: 2 / -1; grid-row: 2; font-size: 11.6px; }
+  .mrow .cliques { display: none; }
+  .mrow.cab { display: none; }
+  .termo { grid-template-columns: 112px 1fr 40px; font-size: 12px; }
+}
+@media (max-width: 620px) {
+  .topo .selo { display: none; }
+  .g-item { font-size: 4.6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+</style>
+</head>
+<body>
+<canvas id="fundo-canvas" aria-hidden="true"></canvas>
+
+<div id="palco">
+  <header class="topo">
+    <span class="alvo">usabilidade · <b>goiania.go.gov.br</b></span>
+    <span class="selo"><i class="ponto-vivo" aria-hidden="true"></i> navegação registrada · ago 2026</span>
+    <span class="contador"><b id="cena-num">01</b> / <span id="cena-total">12</span></span>
+  </header>
+
+  <main class="cenas" id="cenas">
+
+    <!-- 01 · capa -->
+    <section class="cena" aria-label="Abertura">
+      <div class="miolo capa-grade">
+        <div>
+          <p class="kicker" data-anim style="--i:0">análise de usabilidade</p>
+          <h1 data-anim style="--i:1">Cinco perguntas<br>simples.</h1>
+          <p class="linha-apoio" data-anim style="--i:2">Me coloquei no lugar de um morador comum e levei ao site da Prefeitura de Goiânia cinco dúvidas que qualquer pessoa já teve. Eu também não sei o que é SEPLANH, DUAM ou CAE, e o ponto de partida é justamente esse: procurei com o vocabulário de quem só quer resolver a vida, e anotei onde cada pergunta chegou.</p>
+          <div class="capa-meta" data-anim style="--i:3">
+            <div><span>objeto</span><span>www.goiania.go.gov.br</span></div>
+            <div><span>método</span><span>cinco tarefas percorridas do início ao fim</span></div>
+            <div><span>coleta</span><span>20 de agosto de 2026</span></div>
+          </div>
+        </div>
+        <div data-anim style="--i:4">
+          <ul class="perguntas" aria-label="As cinco perguntas levadas ao site">
+            <li style="--d:0"><span class="area-p">saúde</span>“Como eu marco uma consulta?”</li>
+            <li style="--d:.14"><span class="area-p">educação</span>“Como eu matriculo meu filho?”</li>
+            <li style="--d:.28"><span class="area-p">dinheiro</span>“Como eu pago o que devo?”</li>
+            <li style="--d:.42"><span class="area-p">esporte</span>“Onde eu pratico meu esporte?”</li>
+            <li style="--d:.56"><span class="area-p">cultura</span>“O que tem de interessante?”</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 · método -->
+    <section class="cena" aria-label="Método">
+      <div class="miolo">
+        <p class="kicker" data-anim style="--i:0">01 · método</p>
+        <h2 data-anim style="--i:1">Como a avaliação foi feita</h2>
+        <p class="linha-apoio" data-anim style="--i:2">Não é uma crítica de estilo. Cada tarefa começa na página inicial, sem atalho e sem conhecimento prévio de siglas, e só conta como resolvida se o cidadão chega a uma resposta útil ali mesmo, pelo site.</p>
+        <div class="metodo">
+          <div class="bloco" data-anim style="--i:3">
+            <div class="num">01</div>
+            <h3>Tarefa real, não opinião</h3>
+            <p>Cada pergunta é uma coisa concreta que alguém precisa fazer. A avaliação é se dá para fazer, não se o site é bonito.</p>
+          </div>
+          <div class="bloco" data-anim style="--i:4">
+            <div class="num">02</div>
+            <h3>Ponto de partida fixo</h3>
+            <p>Toda tarefa começa na home, como quem chega pelo Google ou digita o endereço. Nada de link direto.</p>
+          </div>
+          <div class="bloco" data-anim style="--i:5">
+            <div class="num">03</div>
+            <h3>Vocabulário de cidadão</h3>
+            <p>Procurei pelo que a pessoa diria, tipo “marcar consulta” e “matricular filho”, e não pelo nome interno do serviço.</p>
+          </div>
+          <div class="bloco" data-anim style="--i:6">
+            <div class="num">04</div>
+            <h3>Critério de sucesso</h3>
+            <p>Verde: chega à resposta. Âmbar: chega, mas por um caminho enganoso. Vermelho: não chega.</p>
+          </div>
+        </div>
+        <p class="nota-rodape" data-anim style="--i:7">Cada jornada foi refeita dentro de uma réplica do site, nas telas a seguir, com o mesmo caminho de cliques.</p>
+      </div>
+    </section>
+
+    <!-- 03 · panorama -->
+    <section class="cena" aria-label="Panorama dos resultados">
+      <div class="miolo">
+        <p class="kicker" data-anim style="--i:0">02 · panorama</p>
+        <h2 data-anim style="--i:1">O conteúdo quase sempre existe.<br>O caminho até ele é que falha.</h2>
+        <p class="linha-apoio" data-anim style="--i:2">Quatro das seis tarefas chegam a uma resposta boa. Em duas delas, porém, a resposta só aparece para quem navega pelas categorias do <b>Portal de Serviços</b>. Pela busca, nenhuma das duas chega.</p>
+        <div class="matriz">
+          <div class="mrow cab" data-anim style="--i:3"><span></span><span>área</span><span>o que a pessoa quer</span><span>cliques</span><span>desfecho</span></div>
+          <div class="mrow" data-anim style="--i:4">
+            <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="#ff5f56" stroke-width="1.7" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            <span class="area">Saúde</span><span class="tarefa">marcar uma consulta</span><span class="cliques">4</span>
+            <span class="veredito v-falha"><i class="bolinha"></i>termina em telefone</span>
+          </div>
+          <div class="mrow" data-anim style="--i:5">
+            <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="#3fbf7f" stroke-width="1.7" aria-hidden="true"><path d="M3 8l9-4 9 4-9 4-9-4zM7 11v5c0 1 2 2 5 2s5-1 5-2v-5"/></svg>
+            <span class="area">Educação</span><span class="tarefa">matricular o filho</span><span class="cliques">5</span>
+            <span class="veredito v-ok"><i class="bolinha"></i>resolve online</span>
+          </div>
+          <div class="mrow" data-anim style="--i:6">
+            <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="#ffb020" stroke-width="1.7" aria-hidden="true"><path d="M4 6h16v12H4zM4 10h16"/></svg>
+            <span class="area">Impostos</span><span class="tarefa">pagar o IPTU</span><span class="cliques">3</span>
+            <span class="veredito v-parcial"><i class="bolinha"></i>fica na aba “Empresa”</span>
+          </div>
+          <div class="mrow" data-anim style="--i:7">
+            <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="#ff5f56" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M8 12h8"/></svg>
+            <span class="area">Multas</span><span class="tarefa">pagar uma multa de trânsito</span><span class="cliques">∞</span>
+            <span class="veredito v-falha"><i class="bolinha"></i>não existe no catálogo</span>
+          </div>
+          <div class="mrow" data-anim style="--i:8">
+            <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="#3fbf7f" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/></svg>
+            <span class="area">Esporte</span><span class="tarefa">onde praticar meu esporte</span><span class="cliques">4</span>
+            <span class="veredito v-ok"><i class="bolinha"></i>responde bem</span>
+          </div>
+          <div class="mrow" data-anim style="--i:9">
+            <svg class="icone" viewBox="0 0 24 24" fill="none" stroke="#3fbf7f" stroke-width="1.7" aria-hidden="true"><path d="M4 19V6l8-2 8 2v13"/><path d="M4 19h16"/></svg>
+            <span class="area">Cultura</span><span class="tarefa">o que tem de interessante</span><span class="cliques">4</span>
+            <span class="veredito v-ok"><i class="bolinha"></i>responde bem</span>
+          </div>
+        </div>
+        <p class="nota-rodape" data-anim style="--i:10">Cliques contados a partir da home, pelo caminho mais curto que um leigo encontraria.</p>
+      </div>
+    </section>
+
+    <!-- 04 · saúde -->
+    <section class="cena" aria-label="Jornada de saúde">
+      <div class="miolo">
+        <p class="kicker" data-anim style="--i:0">03 · saúde</p>
+        <h2 data-anim style="--i:1">“Como eu marco uma consulta?”</h2>
+        <div class="jornada-viva">
+          <div data-anim style="--i:2">
+            <div class="navegador" id="rep-saude">
+              <div class="nav-barra">
+                <span class="nav-bolas" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="nav-url">www.goiania.go.gov.br</span>
+              </div>
+              <div class="nav-tela">
+                <span class="cursor" aria-hidden="true"><svg width="15" height="19" viewBox="0 0 15 19"><path d="M1 1l12 9-5.2.9L11 17l-2.5 1-3.2-6L1 15z" fill="#fff" stroke="#111" stroke-width="1"/></svg></span>
+
+                <div class="quadro" data-url="www.goiania.go.gov.br" data-dur="3800">
+                  <div class="g-topo"><span class="g-logo"></span>
+                    <span class="g-menu"><span>Início</span><span>Secretarias</span><span class="mira" data-alvo>Serviços</span><span>Transparência</span><span>Notícias</span></span>
+                  </div>
+                  <div class="g-abas"><span class="sel">Cidadão</span><span>Empresa</span><span>Servidor</span><span>Turista</span></div>
+                  <div class="g-grade">
+                    <span class="g-item apagado"><i></i>CEJUSC</span>
+                    <span class="g-item apagado"><i></i>Anuário Estatístico</span>
+                    <span class="g-item apagado"><i></i>Nota Fiscal</span>
+                    <span class="g-item apagado"><i></i>Portal do Contribuinte</span>
+                    <span class="g-item apagado"><i></i>Junta Militar</span>
+                    <span class="g-item apagado"><i></i>Diário Oficial</span>
+                    <span class="g-item apagado"><i></i>Mapa 360°</span>
+                    <span class="g-item apagado"><i></i>Atende Fácil</span>
+                    <span class="g-item apagado"><i></i>SEPLANH IMAS SEFIC SMS SME</span>
+                    <span class="g-item apagado"><i></i>Habitação</span>
+                    <span class="g-item apagado"><i></i>Consulta de Processos</span>
+                    <span class="g-item apagado"><i></i>Uso do Solo</span>
+                    <span class="g-item apagado"><i></i>Portal do Servidor</span>
+                    <span class="g-item apagado"><i></i>Alvarás</span>
+                    <span class="g-item apagado"><i></i>Infrações de Trânsito</span>
+                    <span class="g-item apagado"><i></i>Antirrábica</span>
+                  </div>
+                  <div class="g-nota ruim">16 atalhos na aba Cidadão. Nenhum é de saúde.</div>
+                </div>
+
+                <div class="quadro" data-url="www.goiania.go.gov.br/servicos/" data-dur="4000">
+                  <div class="g-topo"><span class="g-logo"></span><span class="g-menu"><span>Início</span><span class="mira">Serviços</span><span>Transparência</span></span></div>
+                  <div class="g-serv">
+                    <div>
+                      <div class="g-busca"><div class="rot">Buscar serviço</div><div class="g-campo vazio" data-digita="marcar consulta" data-alvo>Digite o serviço</div></div>
+                      <div class="g-filtros"><div class="ft">Filtrar por perfil</div><span>Todos os perfis</span><span class="sel">Cidadão</span><span>Empresa</span><span>Servidor</span><span>Turista</span></div>
+                    </div>
+                    <div>
+                      <div class="g-contagem">Encontramos <b>346 resultados</b></div>
+                      <div class="g-cards">
+                        <span class="g-card"><i></i><span><span class="tt">Central de Interpretação de Libras</span><span class="ds">Direitos linguísticos dos cidadãos surdos</span></span></span>
+                        <span class="g-card"><i></i><span><span class="tt">Promoção e Capacitação</span><span class="ds">Capacitação em Direitos Humanos</span></span></span>
+                        <span class="g-card"><i></i><span><span class="tt">Acesso a Medicamentos Especiais</span><span class="ds">Medicamentos de alto custo</span></span></span>
+                        <span class="g-card"><i></i><span><span class="tt">Casa do Empreendedor</span><span class="ds">Espaço da Prefeitura de Goiânia</span></span></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="g-nota">346 serviços, sem ordem por procura.</div>
+                </div>
+
+                <div class="quadro" data-url="www.goiania.go.gov.br/servicos/?search=marcar+consulta" data-dur="4400">
+                  <div class="g-topo"><span class="g-logo"></span><span class="g-menu"><span>Início</span><span class="mira">Serviços</span><span>Transparência</span></span></div>
+                  <div class="g-serv">
+                    <div>
+                      <div class="g-busca"><div class="rot">Buscar serviço</div><div class="g-campo">marcar consulta</div></div>
+                      <div class="g-filtros"><div class="ft">Filtrar por perfil</div><span>Todos os perfis</span><span class="sel">Cidadão</span><span>Empresa</span></div>
+                    </div>
+                    <div>
+                      <div class="g-contagem">Encontramos <b>4 resultados</b></div>
+                      <div class="g-cards">
+                        <span class="g-card errado"><i></i><span><span class="tt">Portal do Servidor</span><span class="ds">Consulte seu contracheque e dados de cargo</span></span></span>
+                        <span class="g-card errado"><i></i><span><span class="tt">Copa Cidade de Goiânia de Orientação</span><span class="ds">Copa em parceria com a federação</span></span></span>
+                        <span class="g-card errado"><i></i><span><span class="tt">Do Atendimento ao Consumidor</span><span class="ds">Recepcionar o público em geral</span></span></span>
+                        <span class="g-card destaque" data-alvo><i></i><span><span class="tt">Central de Atendimento ao Cidadão Teleconsulta de Goiânia</span><span class="ds">Agendamento de atendimento médico ambulatorial</span></span></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="g-nota ruim">O serviço certo é o 4º de 4.</div>
+                </div>
+
+                <div class="quadro" data-url="www.goiania.go.gov.br/sing_servicos/central-de-atendimento-teleconsulta" data-dur="4800">
+                  <div class="g-topo"><span class="g-logo"></span><span class="g-menu"><span>Início</span><span class="mira">Serviços</span><span>Transparência</span></span></div>
+                  <div class="g-pagina">
+                    <div class="g-side">
+                      <b>ÓRGÃO RESPONSÁVEL</b>
+                      Secretaria Municipal de Saúde SMS<br>(62) 3030 4066<br>sms@goiania.go.gov.br<br>Seg a Sex das 8h às 18h<br>Paço Municipal, Bloco D
+                    </div>
+                    <div class="g-corpo">
+                      <div class="g-secao">
+                        <div class="h">Descrição</div>
+                        <div class="txt">A Central de Atendimento ao Cidadão Teleconsulta de Goiânia é um sistema de agendamento de consultas básicas clínicas e eletivas aos usuários do SUS por telefone. As vagas nas em especialidades médicas nas áreas de de Clínica Médica, Ginecologia...</div>
+                        <div class="g-lermais">LER MAIS...</div>
+                      </div>
+                      <div class="g-secao foco">
+                        <div class="h">Previsão e Prazo para Entrega</div>
+                        <div class="txt">O usuário pode marcar consulta ligando gratuitamente pelo telefone <b>0800 646 1560</b> todos os dias, inclusive sábados, domingos e feriados...</div>
+                        <div class="g-lermais">LER MAIS...</div>
+                      </div>
+                      <div class="g-secao">
+                        <div class="h">Requisitos e Documentos Necessários</div>
+                        <div class="txt">Cartão SUS, documento de identificação...</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="g-nota ruim">Nenhum botão. O telefone está no campo de prazo.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div data-anim style="--i:3">
+            <ul class="trilha-passos">
+              <li class="ruim"><span class="n">01</span><span>A aba <b>Cidadão</b> tem 16 atalhos e nenhum de saúde</span></li>
+              <li><span class="n">02</span><span>Sobra o Portal de Serviços, com 346 itens</span></li>
+              <li class="ruim"><span class="n">03</span><span>“marcar consulta” devolve 4 resultados</span></li>
+              <li class="ruim"><span class="n">04</span><span>O certo é o último, abaixo do contracheque</span></li>
+              <li class="ruim"><span class="n">05</span><span>606 palavras, 6 blocos fechados, <b>zero botões</b></span></li>
+            </ul>
+            <button class="btn btn-replay" type="button" data-replay="rep-saude">repetir ↻</button>
+          </div>
+        </div>
+        <div class="resultado-caixa" data-anim style="--i:4">
+          <span class="marca" aria-hidden="true">☎</span>
+          <div>
+            <h3>Desfecho: um telefone no meio do texto</h3>
+            <p>O número para agendar aparece a 40% do corpo da página, sob o rótulo <code>Previsão e Prazo para Entrega</code>. A mesma página lista <b>cinco telefones diferentes</b>. O site não marca a consulta, ele avisa que existe um telefone que marca.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 · a busca da saúde -->
+    <section class="cena" aria-label="Resultado da busca de saúde">
+      <div class="miolo">
+        <p class="kicker" data-anim style="--i:0">03b · o que a busca respondeu</p>
+        <h2 data-anim style="--i:1">Quatro resultados para “marcar consulta”</h2>
+        <p class="linha-apoio" data-anim style="--i:2">A ordem é literal, como o site devolveu. O serviço correto ficou em último.</p>
+        <div class="serp">
+          <div class="item" data-anim style="--i:3"><span class="pos">1º</span><span>Portal do Servidor, consulte seu contracheque</span><span class="tag">irrelevante</span></div>
+          <div class="item" data-anim style="--i:4"><span class="pos">2º</span><span>Copa Cidade de Goiânia de Orientação</span><span class="tag">irrelevante</span></div>
+          <div class="item" data-anim style="--i:5"><span class="pos">3º</span><span>Do Atendimento ao Consumidor</span><span class="tag">irrelevante</span></div>
+          <div class="item certo" data-anim style="--i:6"><span class="pos">4º</span><span>Central de Atendimento ao Cidadão Teleconsulta de Goiânia</span><span class="tag">era esse</span></div>
+        </div>
+        <p class="linha-apoio" data-anim style="--i:7">A busca casa pedaços de palavra em qualquer lugar do texto, então <code>consulte</code>, <code>consumidor</code> e <code>orientação</code> entram na conta. Por isso a palavra “consulta” sozinha devolve <b>195 dos 346 serviços</b>, mais da metade do catálogo.</p>
+      </div>
+    </section>
+
+    <!-- 06 · educação -->
+    <section class="cena" aria-label="Jornada de educação">
+      <div class="miolo">
+        <p class="kicker" data-anim style="--i:0">04 · educação</p>
+        <h2 data-anim style="--i:1">“Como eu matriculo meu filho?”</h2>
+        <div class="jornada-viva">
+          <div data-anim style="--i:2">
+            <div class="navegador" id="rep-edu">
+              <div class="nav-barra">
+                <span class="nav-bolas" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="nav-url">www.goiania.go.gov.br/servicos/</span>
+              </div>
+              <div class="nav-tela">
+                <span class="cursor" aria-hidden="true"><svg width="15" height="19" viewBox="0 0 15 19"><path d="M1 1l12 9-5.2.9L11 17l-2.5 1-3.2-6L1 15z" fill="#fff" stroke="#111" stroke-width="1"/></svg></span>
+
+                <div class="quadro" data-url="www.goiania.go.gov.br/servicos/" data-dur="3600">
+                  <div class="g-topo"><span class="g-logo"></span><span class="g-menu"><span>Início</span><span class="mira">Serviços</span><span>Transparência</span></span></div>
+                  <div class="g-serv">
+                    <div>
+                      <div class="g-busca"><div class="rot">Buscar serviço</div><div class="g-campo vazio" data-digita="matricular filho" data-alvo>Digite o serviço</div></div>
+                      <div class="g-filtros"><div class="ft">Filtrar por perfil</div><span class="sel">Cidadão</span><span>Empresa</span><span>Servidor</span></div>
+                    </div>
+                    <div>
+                      <div class="g-contagem">Encontramos <b>346 resultados</b></div>
+                      <div class="g-cards">
+                        <span class="g-card"><i></i><span><span class="tt">Central de Interpretação de Libras</span></span></span>
+                        <span class="g-card"><i></i><span><span class="tt">Casa do Empreendedor</span></span></span>
+                        <span class="g-card"><i></i><span><span class="tt">Promoção e Capacitação</span></span></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="quadro" data-url="www.goiania.go.gov.br/servicos/?search=matricular+filho" data-dur="3200">
+                  <div class="g-topo"><span class="g-logo"></span><span class="g-menu"><span>Início</span><span class="mira">Serviços</span><span>Transparência</span></span></div>
+                  <div class="g-serv">
+                    <div>
+                      <div class="g-busca"><div class="rot">Buscar serviço</div><div class="g-campo">matricular filho</div></div>
+                      <div class="g-filtros"><div class="ft">Filtrar por perfil</div><span class="sel">Cidadão</span><span>Empresa</span></div>
+                    </div>
+                    <div>
+                      <div class="g-contagem">Encontramos <b>0 resultados</b></div>
+                      <div class="g-vazio">Nenhum serviço encontrado</div>
+                    </div>
+                  </div>
+                  <div class="g-nota ruim">A frase natural não existe no catálogo.</div>
+                </div>
+
+                <div class="quadro" data-url="www.goiania.go.gov.br/servicos/?search=matrícula" data-dur="4000">
+                  <div class="g-topo"><span class="g-logo"></span><span class="g-menu"><span>Início</span><span class="mira">Serviços</span><span>Transparência</span></span></div>
+                  <div class="g-serv">
+                    <div>
+                      <div class="g-busca"><div class="rot">Buscar serviço</div><div class="g-campo" data-digita="matrícula">matrícula</div></div>
+                      <div class="g-filtros"><div class="ft">Filtrar por perfil</div><span class="sel">Cidadão</span><span>Empresa</span></div>
+                    </div>
+                    <div>
+                      <div class="g-contagem">Encontramos <b>15 resultados</b></div>
+                      <div class="g-cards">
+                        <span class="g-card destaque" data-alvo><i></i><span><span class="tt">Matrículas Web</span><span class="ds">Pré-matrícula para vagas nas escolas e CMEIs</span></span></span>
+                        <span class="g-card errado"><i></i><span><span class="tt">Maternidades SMS</span><span class="ds">Informações sobre as maternidades</span></span></span>
+                        <span class="g-card errado"><i></i><span><span class="tt">Manual de Aplicação da Marca</span><span class="ds">Identidade visual do município</span></span></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="g-nota bom">Com a palavra do governo, vem em 1º.</div>
+                </div>
+
+                <div class="quadro" data-url="www.goiania.go.gov.br/sing_servicos/matriculas-web/" data-dur="4200">
+                  <div class="g-topo"><span class="g-logo"></span><span class="g-menu"><span>Início</span><span class="mira">Serviços</span><span>Transparência</span></span></div>
+                  <div class="g-pagina">
+                    <div class="g-side">
+                      <b>ÓRGÃO RESPONSÁVEL</b>
+                      Secretaria Municipal de Educação SME<br>62 3416-6345<br>Seg a Sex de 7h às 18h
+                    </div>
+                    <div class="g-corpo">
+                      <div class="g-secao foco-bom" data-alvo>
+                        <div class="h">Matrículas Web</div>
+                        <div class="txt" style="margin-bottom:5px">Serviço online de pré-matrícula para solicitação de vagas nas Escolas e CMEIs da Rede Municipal.</div>
+                        <span class="g-botao verde">Acessar serviço</span>
+                      </div>
+                      <div class="g-secao">
+                        <div class="h">Descrição</div>
+                        <div class="txt">As vagas para a Educação Infantil são preenchidas seguindo critérios: 50% para beneficiários de programas sociais e mãe trabalhadora...</div>
+                        <div class="g-lermais">LER MAIS...</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="g-nota bom">Botão de ação no topo. Resolve.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div data-anim style="--i:3">
+            <ul class="trilha-passos">
+              <li><span class="n">01</span><span>Home leva ao Portal de Serviços</span></li>
+              <li class="ruim"><span class="n">02</span><span>“matricular filho” devolve <b>0 resultados</b></span></li>
+              <li><span class="n">03</span><span>Trocando para “matrícula”, vêm 15</span></li>
+              <li class="bom"><span class="n">04</span><span><b>Matrículas Web</b> em primeiro lugar</span></li>
+              <li class="bom"><span class="n">05</span><span>Botão “Acessar serviço” leva ao sistema real</span></li>
+            </ul>
+            <button class="btn btn-replay" type="button" data-replay="rep-edu">repetir ↻</button>
+          </div>
+        </div>
+        <div class="resultado-caixa positiva" data-anim style="--i:4">
+          <span class="marca" aria-hidden="true">✓</span>
+          <div>
+            <h3>Desfecho: resolve, se você falar como o governo</h3>
+            <p>É a jornada que funciona, e prova que o problema das outras não é técnico. O botão leva para <code>ematricula.goiania.pontoid.com.br</code>, um domínio e um visual diferentes, então o cidadão precisa confiar que ainda está na prefeitura.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 07 · dinheiro -->
+    <section class="cena" aria-label="Jornada de impostos e multas">
+      <div class="miolo">
+        <p class="kicker" data-anim style="--i:0">05 · dinheiro</p>
+        <h2 data-anim style="--i:1">“Como eu pago o que devo?”</h2>
+        <div class="jornada-viva">
+          <div data-anim style="--i:2">
+            <div class="navegador" id="rep-dinheiro">
+              <div class="nav-barra">
+                <span class="nav-bolas" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="nav-url">www.goiania.go.gov.br</span>
+              </div>
+              <div class="nav-tela">
+                <span class="cursor" aria-hidden="true"><svg width="15" height="19" viewBox="0 0 15 19"><path d="M1 1l12 9-5.2.9L11 17l-2.5 1-3.2-6L1 15z" fill="#fff" stroke="#111" stroke-width="1"/></svg></span>
+
+                <div class="quadro" data-url="www.goiania.go.gov.br" data-dur="3600">
+                  <div class="g-topo"><span class="g-logo"></span><span class="g-menu"><span>Início</span><span>Secretarias</span><span>Serviços</span></span></div>
+                  <div class="g-abas"><span class="sel">Cidadão</span><span data-alvo>Empresa</span><span>Servidor</span><span>Turista</span></div>
+                  <div class="g-grade">
+                    <span class="g-item apagado"><i></i>CEJUSC</span>
+                    <span class="g-item apagado"><i></i>Anuário Estatístico</span>
+                    <span class="g-item apagado"><i></i>Nota Fiscal</span>
+                    <span class="g-item apagado"><i></i>Portal do Contribuinte</span>
+                    <span class="g-item apagado"><i></i>Junta Militar</span>
+                    <span class="g-item apagado"><i></i>Diário Oficial</span>
+                    <span class="g-item apagado"><i></i>Mapa 360°</span>
+                    <span class="g-item apagado"><i></i>Atende Fácil</span>
+                    <span class="g-item apagado"><i></i>Habitação</span>
+                    <span class="g-item apagado"><i></i>Consulta de Processos</span>
+                    <span class="g-item apagado"><i></i>Uso do Solo</span>
+                    <span class="g-item apagado"><i></i>Portal do Servidor</span>
+                    <span class="g-item apagado"><i></i>Alvarás</span>
+                    <span class="g-item apagado"><i></i>Infrações de Trânsito</span>
+                    <span class="g-item apagado"><i></i>Antirrábica</span>
+                    <span class="g-item apagado"><i></i>Campanhas</span>
+                  </div>
+                  <div class="g-nota ruim">O IPTU não está na aba Cidadão.</div>
+                </div>
+
+                <div class="quadro" data-url="www.goiania.go.gov.br" data-dur="3800">
+                  <div class="g-topo"><span class="g-logo"></span><span class="g-menu"><span>Início</span><span>Secretarias</span><span>Serviços</span></span></div>
+                  <div class="g-abas"><span>Cidadão</span><span class="sel">Empresa</span><span>Servidor</span><span>Turista</span></div>
+                  <div class="g-grade">
+                    <span class="g-item marcado" data-alvo><i></i>IPTU e ITU</span>
+                    <span class="g-item"><i></i>Portal do Contribuinte</span>
+                    <span class="g-item"><i></i>Licitações e Contratos</span>
+                    <span class="g-item"><i></i>Licença Ambiental Fácil</span>
+                    <span class="g-item"><i></i>Empresa Fácil</span>
+                    <span class="g-item"><i></i>Prestador de outro município</span>
+                    <span class="g-item"><i></i>Consulta CAE</span>
+                    <span class="g-item"><i></i>Uso do Solo</span>
+                    <span class="g-item"><i></i>Documento Eletrônico eDOC</span>
+                    <span class="g-item"><i></i>DUAM</span>
+                  </div>
+                  <div class="g-nota ruim">Quem tem uma casa procura em “Cidadão”.</div>
+                </div>
+
+                <div class="quadro" data-url="www.goiania.go.gov.br/sing_servicos/emissao-duam-itu-iptu-issqn/" data-dur="3600">
+                  <div class="g-topo"><span class="g-logo"></span><span class="g-menu"><span>Início</span><span class="mira">Serviços</span><span>Transparência</span></span></div>
+                  <div class="g-pagina">
+                    <div class="g-side">
+                      <b>ÓRGÃO RESPONSÁVEL</b>
+                      Secretaria Municipal da Fazenda SEFAZ<br>(62) 3416-6565<br>Seg a Sex de 8h às 18h
+                    </div>
+                    <div class="g-corpo">
+                      <div class="g-secao foco-bom" data-alvo>
+                        <div class="h">Emitir Guia para pagamento de IPTU e ITU</div>
+                        <div class="txt" style="margin-bottom:5px">Serviço online para emissão do Documento Único de Arrecadação Municipal (DUAM).</div>
+                        <span class="g-botao">Acessar serviço</span>
+                      </div>
+                      <div class="g-secao">
+                        <div class="h">Requisitos e Documentos Necessários</div>
+                        <div class="txt">Informar: número da inscrição municipal ITU / IPTU.</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="g-nota bom">107 palavras e um botão. Esta página é boa.</div>
+                </div>
+
+                <div class="quadro" data-url="www.goiania.go.gov.br/servicos/?search=multa" data-dur="4400">
+                  <div class="g-topo"><span class="g-logo"></span><span class="g-menu"><span>Início</span><span class="mira">Serviços</span><span>Transparência</span></span></div>
+                  <div class="g-serv">
+                    <div>
+                      <div class="g-busca"><div class="rot">Buscar serviço</div><div class="g-campo" data-digita="multa">multa</div></div>
+                      <div class="g-filtros"><div class="ft">Filtrar por perfil</div><span class="sel">Cidadão</span><span>Empresa</span></div>
+                    </div>
+                    <div>
+                      <div class="g-contagem">Encontramos <b>25 resultados</b></div>
+                      <div class="g-cards">
+                        <span class="g-card errado"><i></i><span><span class="tt">Ressarcimento de multas de trânsito pagas</span><span class="ds">Devolução de valor pago indevidamente</span></span></span>
+                        <span class="g-card errado"><i></i><span><span class="tt">Recurso Administrativo de Multas</span><span class="ds">Contestar a autuação</span></span></span>
+                        <span class="g-card errado"><i></i><span><span class="tt">Curso Multiplicadores de Educação</span><span class="ds">Formação para alunos de nível superior</span></span></span>
+                        <span class="g-card errado"><i></i><span><span class="tt">Centro de Referência da Mulher Cora Coralina</span><span class="ds">Atendimento à mulher em situação de violência</span></span></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="g-nota ruim">Pagar multa não existe no catálogo.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div data-anim style="--i:3">
+            <ul class="trilha-passos">
+              <li class="ruim"><span class="n">01</span><span>Na aba <b>Cidadão</b> não tem IPTU</span></li>
+              <li class="ruim"><span class="n">02</span><span>Ele está na aba <b>Empresa</b></span></li>
+              <li class="bom"><span class="n">03</span><span>A página do IPTU é curta e tem botão</span></li>
+              <li class="ruim"><span class="n">04</span><span>Buscar “multa” traz ressarcimento e recurso</span></li>
+              <li class="ruim"><span class="n">05</span><span>Buscar “pagar” traz só IPTU, ITBI e ISS</span></li>
+            </ul>
+            <button class="btn btn-replay" type="button" data-replay="rep-dinheiro">repetir ↻</button>
+          </div>
+        </div>
+        <div class="resultado-caixa" data-anim style="--i:4">
+          <span class="marca" aria-hidden="true">✕</span>
+          <div>
+            <h3>Desfecho: dá para pagar imposto, não dá para pagar multa</h3>
+            <p>Os dois únicos resultados relacionados a multa são <b>pedir dinheiro de volta</b> e <b>recorrer</b>. Em 4º lugar aparece o Centro de Referência da Mulher, que casou com o pedaço “mul”.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 08 · esporte e cultura -->
+    <section class="cena" aria-label="Jornada de esporte e cultura">
+      <div class="miolo">
+        <p class="kicker" data-anim style="--i:0">06 · esporte e cultura</p>
+        <h2 data-anim style="--i:1">“Onde eu pratico meu esporte?”</h2>
+        <div class="jornada-viva">
+          <div data-anim style="--i:2">
+            <div class="navegador" id="rep-lazer">
+              <div class="nav-barra">
+                <span class="nav-bolas" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="nav-url">www.goiania.go.gov.br/servicos/</span>
+              </div>
+              <div class="nav-tela">
+                <span class="cursor" aria-hidden="true"><svg width="15" height="19" viewBox="0 0 15 19"><path d="M1 1l12 9-5.2.9L11 17l-2.5 1-3.2-6L1 15z" fill="#fff" stroke="#111" stroke-width="1"/></svg></span>
+
+                <div class="quadro" data-url="www.goiania.go.gov.br/servicos/" data-dur="3600">
+                  <div class="g-topo"><span class="g-logo"></span><span class="g-menu"><span>Início</span><span class="mira">Serviços</span><span>Transparência</span></span></div>
+                  <div class="g-serv">
+                    <div>
+                      <div class="g-busca"><div class="rot">Buscar serviço</div><div class="g-campo vazio">Digite o serviço</div></div>
+                      <div class="g-filtros">
+                        <div class="ft">Filtrar por categoria</div>
+                        <span>Todas as categorias</span><span>Cultura</span><span>Educação</span>
+                        <span class="sel" data-alvo>Esporte</span><span>Impostos e Taxas</span><span>Saúde</span><span>Turismo e Lazer</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="g-contagem">Encontramos <b>346 resultados</b></div>
+                      <div class="g-cards">
+                        <span class="g-card"><i></i><span><span class="tt">Central de Interpretação de Libras</span></span></span>
+                        <span class="g-card"><i></i><span><span class="tt">Casa do Empreendedor</span></span></span>
+                        <span class="g-card"><i></i><span><span class="tt">Acesso a Medicamentos Especiais</span></span></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="g-nota">Aqui o caminho é o filtro, não a busca.</div>
+                </div>
+
+                <div class="quadro" data-url="www.goiania.go.gov.br/servicos/?categoria=esporte" data-dur="4000">
+                  <div class="g-topo"><span class="g-logo"></span><span class="g-menu"><span>Início</span><span class="mira">Serviços</span><span>Transparência</span></span></div>
+                  <div class="g-serv">
+                    <div>
+                      <div class="g-busca"><div class="rot">Buscar serviço</div><div class="g-campo vazio">Digite o serviço</div></div>
+                      <div class="g-filtros"><div class="ft">Filtrar por categoria</div><span>Cultura</span><span>Educação</span><span class="sel">Esporte</span><span>Saúde</span></div>
+                    </div>
+                    <div>
+                      <div class="g-contagem">Encontramos <b>13 resultados</b></div>
+                      <div class="g-cards">
+                        <span class="g-card"><i></i><span><span class="tt">Copa Municipal de Natação</span><span class="ds">Torneio Interatividade</span></span></span>
+                        <span class="g-card"><i></i><span><span class="tt">Seletivas Jogos Abertos de Goiás</span></span></span>
+                        <span class="g-card destaque" data-alvo><i></i><span><span class="tt">Esporte nos Bairros</span><span class="ds">Atividades esportivas nas 7 regiões da cidade</span></span></span>
+                        <span class="g-card"><i></i><span><span class="tt">Rua dos Esportes, Golzinho nos Bairros</span></span></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="g-nota bom">O filtro por categoria acha em 2 cliques.</div>
+                </div>
+
+                <div class="quadro" data-url="www.goiania.go.gov.br/sing_servicos/esporte-nos-bairros/" data-dur="5000">
+                  <div class="g-topo"><span class="g-logo"></span><span class="g-menu"><span>Início</span><span class="mira">Serviços</span><span>Transparência</span></span></div>
+                  <div class="g-pagina">
+                    <div class="g-side">
+                      <b>ÓRGÃO RESPONSÁVEL</b>
+                      Secretaria Municipal de Esporte e Lazer SEMEL<br>62 3030-2777<br>Seg a Sex das 8h às 18h
+                    </div>
+                    <div class="g-corpo">
+                      <div class="g-secao foco-bom">
+                        <div class="h">Formas de Prestação do Serviço</div>
+                        <div class="txt">Basquete · Exercícios para autistas · Funcional · Futebol · Futebol de Cegos · Futsal · Ginástica · <b>Natação</b> · Parabadminton · Pilates · Taekwondo · Tênis · Vôlei</div>
+                      </div>
+                      <div class="g-secao foco">
+                        <div class="h">Local e/ou Forma de Manifestação</div>
+                        <div class="txt">Núcleos Esportivos: Centro Esportivo Jardim Guanabara · Centro Esportivo Maguito Vilela · Parque Municipal Aquários · Praça da Juventude Jardim das Aroeiras · Clube do Povo...</div>
+                        <div class="g-lermais">LER MAIS...</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="g-nota bom">15 modalidades e 10 núcleos com nome.</div>
+                </div>
+
+                <div class="quadro" data-url="www.goiania.go.gov.br/servicos/?search=natação" data-dur="4600">
+                  <div class="g-topo"><span class="g-logo"></span><span class="g-menu"><span>Início</span><span class="mira">Serviços</span><span>Transparência</span></span></div>
+                  <div class="g-serv">
+                    <div>
+                      <div class="g-busca"><div class="rot">Buscar serviço</div><div class="g-campo" data-digita="natação">natação</div></div>
+                      <div class="g-filtros"><div class="ft">Filtrar por categoria</div><span>Todas as categorias</span><span>Esporte</span></div>
+                    </div>
+                    <div>
+                      <div class="g-contagem">Encontramos <b>15 resultados</b></div>
+                      <div class="g-cards">
+                        <span class="g-card errado"><i></i><span><span class="tt">Copa Municipal de Natação</span></span></span>
+                        <span class="g-card errado"><i></i><span><span class="tt">Alvará de Autorização de Micro Reforma</span></span></span>
+                        <span class="g-card errado"><i></i><span><span class="tt">Serviço de Verificação de Óbitos</span></span></span>
+                        <span class="g-card errado"><i></i><span><span class="tt">SAMU 192</span><span class="ds">Atendimento móvel de urgência</span></span></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="g-nota ruim">“Esporte nos Bairros” não está em nenhum dos 15.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div data-anim style="--i:3">
+            <ul class="trilha-passos">
+              <li class="bom"><span class="n">01</span><span>Pelo filtro de categoria <b>Esporte</b>, 13 serviços</span></li>
+              <li class="bom"><span class="n">02</span><span><b>Esporte nos Bairros</b> lista 15 modalidades</span></li>
+              <li class="bom"><span class="n">03</span><span>E dá o nome de <b>10 núcleos esportivos</b></span></li>
+              <li class="ruim"><span class="n">04</span><span>Mas buscar “natação” não leva a essa página</span></li>
+              <li class="ruim"><span class="n">05</span><span>Os núcleos ficam sob “Local e/ou Forma de Manifestação”</span></li>
+            </ul>
+            <button class="btn btn-replay" type="button" data-replay="rep-lazer">repetir ↻</button>
+          </div>
+        </div>
+        <div class="resultado-caixa positiva" data-anim style="--i:4">
+          <span class="marca" aria-hidden="true">✓</span>
+          <div>
+            <h3>Cultura funciona igual: a categoria responde, a busca não</h3>
+            <p>Pelo filtro <b>Cultura</b> vêm Museus, Centros Culturais e Bibliotecas, com endereço, telefone, WhatsApp e Instagram. O que continua sem resposta é o que está em cartaz hoje: o atalho “Calendário de Eventos”, na home, devolve erro 404.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 09 · a busca -->
+    <section class="cena" aria-label="Comportamento da busca">
+      <div class="miolo">
+        <p class="kicker" data-anim style="--i:0">07 · o buscador</p>
+        <h2 data-anim style="--i:1">A busca é o elo fraco</h2>
+        <p class="linha-apoio" data-anim style="--i:2">Mesmo catálogo, termos diferentes. A barra mostra quantos dos 346 serviços cada palavra devolve.</p>
+        <div class="termos">
+          <div class="termo" style="--i:0" data-anim><span class="q">“consulta”</span><span class="faixa"><i class="preen" style="--w:100%; background:var(--ruim)"></i></span><span class="n">195</span></div>
+          <div class="termo" style="--i:1" data-anim><span class="q">“cultura”</span><span class="faixa"><i class="preen" style="--w:50%; background:var(--alerta)"></i></span><span class="n">98</span></div>
+          <div class="termo" style="--i:2" data-anim><span class="q">“esporte”</span><span class="faixa"><i class="preen" style="--w:35%; background:var(--alerta)"></i></span><span class="n">69</span></div>
+          <div class="termo" style="--i:3" data-anim><span class="q">“multa”</span><span class="faixa"><i class="preen" style="--w:13%; background:var(--alerta)"></i></span><span class="n">25</span></div>
+          <div class="termo" style="--i:4" data-anim><span class="q">“natação”</span><span class="faixa"><i class="preen" style="--w:8%; background:var(--alerta)"></i></span><span class="n">15</span></div>
+          <div class="termo" style="--i:5" data-anim><span class="q">“marcar consulta”</span><span class="faixa"><i class="preen" style="--w:2%; background:var(--ciano)"></i></span><span class="n">4</span></div>
+          <div class="termo" style="--i:6" data-anim><span class="q">“matricular filho”</span><span class="faixa"><i class="preen" style="--w:1%; background:var(--ruim)"></i></span><span class="n">0</span></div>
+        </div>
+        <div class="resultado-caixa" data-anim style="--i:8">
+          <span class="marca" aria-hidden="true">🏊</span>
+          <div>
+            <h3>Quem procura natação recebe o Serviço de Verificação de Óbitos</h3>
+            <p>A busca tolera erro de digitação, mas não dá peso ao título, então aproxima qualquer coisa. O pior efeito não é o resultado estranho: é que a página certa, “Esporte nos Bairros”, que oferece natação, <b>não aparece em nenhum dos 15 resultados</b>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 · diagnóstico -->
+    <section class="cena" aria-label="Diagnóstico quantitativo">
+      <div class="miolo">
+        <p class="kicker" data-anim style="--i:0">08 · diagnóstico</p>
+        <h2 data-anim style="--i:1">O catálogo informa bem e resolve pouco</h2>
+        <p class="linha-apoio" data-anim style="--i:2">Abri uma amostra sistemática de <b>50 dos 346 serviços</b>, um a cada sete da lista, e medi o que cada página entrega no fim.</p>
+        <div class="numeros">
+          <div class="cel ruim" data-anim style="--i:3"><div class="val"><span data-conta="30">0</span><small>%</small></div><div class="rot">têm botão “Acessar serviço”</div></div>
+          <div class="cel destaque" data-anim style="--i:4"><div class="val"><span data-conta="96">0</span><small>%</small></div><div class="rot">oferecem um telefone</div></div>
+          <div class="cel" data-anim style="--i:5"><div class="val"><span data-conta="326">0</span></div><div class="rot">palavras em média por serviço</div></div>
+          <div class="cel" data-anim style="--i:6"><div class="val"><span data-conta="5">0</span></div><div class="rot">blocos “Ler mais” fechados, em média</div></div>
+        </div>
+        <div class="numeros" style="margin-top:11px">
+          <div class="cel" data-anim style="--i:7"><div class="val"><span data-conta="161">0</span></div><div class="rot">links na home, para 381 palavras</div></div>
+          <div class="cel ruim" data-anim style="--i:8"><div class="val"><span data-conta="2">0</span><small>/20</small></div><div class="rot">atalhos da home com erro 404</div></div>
+          <div class="cel verde" data-anim style="--i:9"><div class="val"><span data-conta="34">0</span></div><div class="rot">categorias, e elas funcionam bem</div></div>
+          <div class="cel ruim" data-anim style="--i:10"><div class="val"><span data-conta="0">0</span></div><div class="rot">sinônimos de cidadão na busca</div></div>
+        </div>
+        <p class="nota-rodape" data-anim style="--i:11">Boa parte dos serviços é informativa por natureza, tipo museu e biblioteca, e nesses o texto basta. O problema é a página não separar o que se resolve online do que só se resolve no balcão.</p>
+      </div>
+    </section>
+
+    <!-- 11 · proposta -->
+    <section class="cena" aria-label="Proposta de redesenho">
+      <div class="miolo">
+        <p class="kicker" data-anim style="--i:0">09 · proposta</p>
+        <h2 data-anim style="--i:1">Trocar o organograma pela intenção</h2>
+        <p class="linha-apoio" data-anim style="--i:2">As categorias do Portal de Serviços já organizam tudo por assunto e funcionam bem. Falta levar essa lógica para a home e para a busca.</p>
+        <div class="comparacao">
+          <div class="lado antes" data-anim style="--i:3">
+            <h3>hoje</h3>
+            <div class="mock" aria-hidden="true">
+              <div class="faixa-topo"></div>
+              <div class="abas"><span></span><span></span><span></span><span></span></div>
+              <div class="grade-ic"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+            </div>
+            <ul>
+              <li>Abas por perfil: Cidadão, Empresa, Servidor, Turista</li>
+              <li>20 atalhos em ordem herdada, sem hierarquia</li>
+              <li>As categorias, que funcionam, ficam escondidas dentro do Portal</li>
+            </ul>
+          </div>
+          <div class="lado depois" data-anim style="--i:4">
+            <h3>proposta</h3>
+            <div class="mock" aria-hidden="true">
+              <div class="faixa-topo"></div>
+              <div class="busca-grande">o que você precisa resolver hoje?</div>
+              <div class="cards6"><span>Saúde</span><span>Educação</span><span>Dinheiro</span><span>Trânsito</span><span>Lazer</span><span>Documentos</span></div>
+            </div>
+            <ul>
+              <li>As mesmas categorias, agora na primeira tela</li>
+              <li>Busca em destaque, entendendo o jeito que a pessoa fala</li>
+              <li>Ação e endereço no topo do serviço, fora do “Ler mais”</li>
+            </ul>
+          </div>
+        </div>
+        <div class="recos" style="margin-top:13px">
+          <div class="reco" data-anim style="--i:5"><span class="idx">01</span><span class="txt"><b>Mapear sinônimos na busca</b>, para “matricular filho” achar Matrículas Web e “natação” achar Esporte nos Bairros</span><span class="esf">baixo esforço</span></div>
+          <div class="reco" data-anim style="--i:6"><span class="idx">02</span><span class="txt"><b>Dar peso ao título</b> na relevância, em vez de casar pedaço de palavra em qualquer parte do texto</span><span class="esf">baixo esforço</span></div>
+          <div class="reco" data-anim style="--i:7"><span class="idx">03</span><span class="txt"><b>Subir a ação para o topo</b> do serviço: botão, telefone ou endereço sempre visível</span><span class="esf">médio</span></div>
+          <div class="reco" data-anim style="--i:8"><span class="idx">04</span><span class="txt"><b>Renomear os campos do formulário</b>, porque “Local e/ou Forma de Manifestação” é onde estão os endereços úteis</span><span class="esf">médio</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 · conclusão -->
+    <section class="cena" aria-label="Conclusão">
+      <div class="miolo">
+        <p class="kicker" data-anim style="--i:0">10 · conclusão</p>
+        <h2 data-anim style="--i:1">A informação está lá.<br>Quem não chega nela é o cidadão.</h2>
+        <p class="linha-apoio" data-anim style="--i:2">Esperava encontrar um site vazio e encontrei o contrário. Os 346 serviços são descritos com cuidado, as categorias organizam bem, e páginas como a do Esporte nos Bairros respondem melhor do que eu imaginava. O que falha é o trajeto: a busca não fala a língua de quem procura, a home ordena o mundo pelo organograma da prefeitura, e a resposta mais útil costuma estar atrás de um “Ler mais” ou de um rótulo de formulário. Não é um problema de conteúdo, é de porta de entrada.</p>
+        <div class="creditos">
+          <div data-anim style="--i:3"><div class="r">disciplina</div><div class="v">Design Gráfico e User Experience</div></div>
+          <div data-anim style="--i:4"><div class="r">autor</div><div class="v">Kauê Prata</div></div>
+          <div data-anim style="--i:5"><div class="r">objeto</div><div class="v">www.goiania.go.gov.br</div></div>
+          <div data-anim style="--i:6"><div class="r">coleta</div><div class="v">20 de agosto de 2026</div></div>
+        </div>
+        <p class="nota-rodape" data-anim style="--i:7">Os números vêm de navegação registrada no próprio site: contagem de cliques, resultados de busca, amostra de 50 dos 346 serviços e verificação de status dos atalhos da home. As telas desta apresentação são réplicas em HTML, feitas para reproduzir o caminho percorrido.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="controles">
+    <div class="progresso"><i id="barra-progresso"></i></div>
+    <button class="btn" id="anterior" aria-label="Cena anterior">←</button>
+    <button class="btn" id="tocar" aria-label="Pausar apresentação">pausar</button>
+    <button class="btn" id="proximo" aria-label="Próxima cena">→</button>
+    <span class="dica">setas para navegar · espaço para pausar</span>
+    <div class="pontos" id="pontos" role="tablist" aria-label="Cenas"></div>
+  </footer>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const cenas = [...document.querySelectorAll(".cena")];
+  const pontos = document.getElementById("pontos");
+  const numeroCena = document.getElementById("cena-num");
+  const barra = document.getElementById("barra-progresso");
+  const btnTocar = document.getElementById("tocar");
+  const semMovimento = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const DURACAO_PADRAO = 13000;
+  const DURACOES = [11000, 14000, 16000, 14000, 13000, 14000, 14000, 14000, 14000, 16000, 17000, 18000];
+
+  let atual = 0;
+  let tocando = !semMovimento;
+  let inicioCena = 0;
+  let decorrido = 0;
+  let duracaoAtual = DURACAO_PADRAO;
+
+  document.getElementById("cena-total").textContent = String(cenas.length).padStart(2, "0");
+
+  cenas.forEach((_, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.setAttribute("role", "tab");
+    b.setAttribute("aria-label", "Cena " + (i + 1));
+    b.addEventListener("click", () => irPara(i, true));
+    pontos.appendChild(b);
+  });
+  const botoesPonto = [...pontos.children];
+
+  /* ---------- réplicas animadas do site ---------- */
+  function prepararReplays() {
+    document.querySelectorAll(".navegador").forEach(nav => {
+      const tela = nav.querySelector(".nav-tela");
+      const url = nav.querySelector(".nav-url");
+      const cursor = nav.querySelector(".cursor");
+      const quadros = [...tela.querySelectorAll(".quadro")];
+      let timers = [];
+      const ag = (fn, t) => timers.push(setTimeout(fn, t));
+
+      nav.parar = () => { timers.forEach(clearTimeout); timers = []; };
+      nav.duracao = 500 + quadros.reduce((soma, q) => soma + parseInt(q.dataset.dur || "3500", 10), 0);
+
+      nav.tocar = () => {
+        nav.parar();
+        quadros.forEach(q => q.classList.remove("on"));
+        cursor.style.transition = "none";
+        cursor.style.transform = "translate(28px, 24px)";
+        ag(() => { cursor.style.transition = ""; }, 50);
+
+        let t = 500;
+        quadros.forEach(q => {
+          const dur = parseInt(q.dataset.dur || "3500", 10);
+          ag(() => {
+            quadros.forEach(x => x.classList.remove("on"));
+            q.classList.add("on");
+            if (q.dataset.url) url.textContent = q.dataset.url;
+
+            const digita = q.querySelector("[data-digita]");
+            if (digita) {
+              const texto = digita.dataset.digita;
+              digita.textContent = "";
+              digita.classList.add("vazio");
+              for (let k = 0; k <= texto.length; k++) {
+                ag(() => {
+                  digita.classList.remove("vazio");
+                  digita.textContent = texto.slice(0, k) + (k < texto.length ? "|" : "");
+                }, 900 + k * 55);
+              }
+            }
+
+            const alvo = q.querySelector("[data-alvo]");
+            if (alvo) {
+              ag(() => {
+                const r = alvo.getBoundingClientRect();
+                const rt = tela.getBoundingClientRect();
+                if (!rt.width) return;
+                cursor.style.transform = "translate(" + (r.left - rt.left + r.width / 2) + "px," + (r.top - rt.top + r.height / 2) + "px)";
+              }, Math.min(800, dur * 0.22));
+              ag(() => cursor.classList.add("clicando"), Math.min(1900, dur * 0.62));
+              ag(() => cursor.classList.remove("clicando"), Math.min(2500, dur * 0.62 + 600));
+            }
+          }, t);
+          t += dur;
+        });
+      };
+    });
+
+    document.querySelectorAll(".btn-replay").forEach(b => {
+      const nav = document.getElementById(b.dataset.replay);
+      if (nav) b.addEventListener("click", () => { nav.tocar(); pausar(true); });
+    });
+  }
+
+  function animarNumeros(cena) {
+    cena.querySelectorAll("[data-conta]").forEach(el => {
+      const alvo = parseFloat(el.dataset.conta);
+      const casas = parseInt(el.dataset.dec || "0", 10);
+      const formata = v => v.toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
+      if (semMovimento) { el.textContent = formata(alvo); return; }
+      const dur = 1100;
+      const t0 = performance.now();
+      const passo = agora => {
+        const p = Math.min(1, (agora - t0) / dur);
+        el.textContent = formata(alvo * (1 - Math.pow(1 - p, 3)));
+        if (p < 1) requestAnimationFrame(passo);
+      };
+      requestAnimationFrame(passo);
+      // rede de seguranca: em aba de fundo o rAF nao dispara e o numero ficaria em zero
+      setTimeout(() => { el.textContent = formata(alvo); }, dur + 350);
+    });
+  }
+
+  function irPara(indice, manual) {
+    const alvo = (indice + cenas.length) % cenas.length;
+    cenas.forEach((c, i) => c.classList.toggle("ativa", i === alvo));
+    botoesPonto.forEach((b, i) => b.setAttribute("aria-current", String(i === alvo)));
+    atual = alvo;
+    numeroCena.textContent = String(alvo + 1).padStart(2, "0");
+
+    const cena = cenas[alvo];
+    cena.scrollTop = 0;
+    void cena.offsetWidth;
+
+    // cenas que nao cabem na tela ganham aviso e tempo extra de leitura
+    const sobra = Math.max(0, cena.scrollHeight - cena.clientHeight);
+    cena.classList.toggle("tem-mais", sobra > 20);
+    duracaoAtual = (DURACOES[alvo] || DURACAO_PADRAO) + Math.min(14000, sobra * 14);
+
+    // a replica do site so roda na cena visivel
+    document.querySelectorAll(".navegador").forEach(n => n.parar && n.parar());
+    const replays = [...cena.querySelectorAll(".navegador")];
+    replays.forEach(n => n.tocar && n.tocar());
+    if (replays.length) {
+      const maior = Math.max(...replays.map(n => n.duracao || 0));
+      duracaoAtual = Math.max(duracaoAtual, maior + 3000);
+    }
+
+    animarNumeros(cena);
+    inicioCena = performance.now();
+    decorrido = 0;
+    if (manual) pausar(true);
+  }
+
+  function pausar(estado) {
+    tocando = !estado;
+    btnTocar.textContent = tocando ? "pausar" : "tocar";
+    btnTocar.setAttribute("aria-label", tocando ? "Pausar apresentação" : "Retomar apresentação");
+    if (tocando) inicioCena = performance.now() - decorrido;
+  }
+
+  function laco(agora) {
+    const dur = duracaoAtual;
+    if (tocando) {
+      decorrido = agora - inicioCena;
+      if (decorrido >= dur) irPara(atual + 1);
+    }
+    barra.style.width = Math.min(100, (decorrido / dur) * 100) + "%";
+    requestAnimationFrame(laco);
+  }
+
+  document.getElementById("anterior").addEventListener("click", () => irPara(atual - 1, true));
+  document.getElementById("proximo").addEventListener("click", () => irPara(atual + 1, true));
+  btnTocar.addEventListener("click", () => pausar(tocando));
+
+  addEventListener("keydown", e => {
+    if (e.key === "ArrowRight") { irPara(atual + 1, true); e.preventDefault(); }
+    else if (e.key === "ArrowLeft") { irPara(atual - 1, true); e.preventDefault(); }
+    else if (e.key === " ") { pausar(tocando); e.preventDefault(); }
+  });
+
+  document.addEventListener("visibilitychange", () => { if (document.hidden && tocando) pausar(true); });
+
+  // quem comeca a ler rolando a cena nao quer ser interrompido pelo autoplay
+  cenas.forEach(c => c.addEventListener("scroll", () => {
+    if (tocando && c.scrollTop > 8) pausar(true);
+  }, { passive: true }));
+
+  /* fundo animado */
+  const canvas = document.getElementById("fundo-canvas");
+  const ctx = canvas.getContext("2d");
+  let larg = 0, alt = 0;
+  const pacotes = [];
+
+  function dimensionar() {
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    larg = canvas.clientWidth; alt = canvas.clientHeight;
+    canvas.width = Math.round(larg * dpr); canvas.height = Math.round(alt * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function semear() {
+    pacotes.length = 0;
+    const n = Math.round((larg * alt) / 46000);
+    for (let i = 0; i < n; i++) {
+      pacotes.push({ x: Math.random() * larg, y: Math.random() * alt, v: .1 + Math.random() * .3, r: .7 + Math.random() * 1.4, a: .1 + Math.random() * .25 });
+    }
+  }
+
+  function pintar() {
+    ctx.clearRect(0, 0, larg, alt);
+    const passo = 56;
+    ctx.strokeStyle = "rgba(255,255,255,.024)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = 0; x <= larg; x += passo) { ctx.moveTo(x + .5, 0); ctx.lineTo(x + .5, alt); }
+    for (let y = 0; y <= alt; y += passo) { ctx.moveTo(0, y + .5); ctx.lineTo(larg, y + .5); }
+    ctx.stroke();
+    for (const p of pacotes) {
+      p.y -= p.v;
+      if (p.y < -4) { p.y = alt + 4; p.x = Math.random() * larg; }
+      ctx.fillStyle = "rgba(30,200,224," + p.a + ")";
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+    }
+    requestAnimationFrame(pintar);
+  }
+
+  addEventListener("resize", () => { dimensionar(); semear(); });
+  dimensionar(); semear();
+  if (!semMovimento) pintar();
+
+  prepararReplays();
+  irPara(0);
+  if (!tocando) btnTocar.textContent = "tocar";
+  requestAnimationFrame(laco);
+})();
+</script>
+</body>
+</html>
