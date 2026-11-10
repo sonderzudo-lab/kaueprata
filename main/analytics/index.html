@@ -169,7 +169,6 @@
 
   <footer class="an-foot an-mono">
     <span id="updated"></span>
-    <span id="sample" hidden>dados de demonstração</span>
   </footer>
 </div>
 
@@ -368,7 +367,6 @@
     heat();
     const when = new Date(d.updated);
     $('updated').textContent = `atualizado às ${when.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} · últimos ${d.range} dias`;
-    $('sample').hidden = !d.sample;
   }
 
   $('tab-overview').addEventListener('click', () => { state.view = 'overview'; render(); });

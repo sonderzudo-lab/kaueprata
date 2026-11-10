@@ -1,11 +1,9 @@
-// painel do dono: /analytics. A senha vem da variavel ANALYTICS_PASSWORD da Vercel.
-// Enquanto ela nao existir vale a senha temporaria abaixo, que o dono pediu e vai trocar: tirar daqui quando trocar.
+// painel do dono: /analytics. A senha fica na variavel ANALYTICS_PASSWORD da Vercel, nunca no codigo.
 // POST {password} devolve um passe de 12 horas; GET com o passe devolve os numeros.
 'use strict';
 
 const crypto = require('crypto');
 
-const TEMPORARY_PASSWORD = '12345';
 const HOURS = 12;
 const DAY = 86400000;
 const OFFSET = -3 * 3600000; // America/Sao_Paulo
@@ -157,7 +155,7 @@ function report(range) {
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Robots-Tag', 'noindex, nofollow');
-  const password = process.env.ANALYTICS_PASSWORD || TEMPORARY_PASSWORD;
+  const password = process.env.ANALYTICS_PASSWORD || '';
   if (!password) return res.status(503).json({ error: 'not_configured' });
   if (req.method === 'POST') {
     let body = req.body;
