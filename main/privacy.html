@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0F1012">
+<script>
+(() => {
+  try {
+    if (localStorage.getItem('kp-theme') === 'light') {
+      document.documentElement.dataset.theme = 'light';
+      document.documentElement.style.colorScheme = 'light';
+      document.querySelector('meta[name="theme-color"]').content = '#F2EFE8';
+    }
+  } catch (e) {}
+})();
+</script>
+<style>html{background:#0F1012}html[data-theme="light"]{background:#F2EFE8}</style>
+<style>
+.note h1{font-size:clamp(40px,7vw,72px)}
+.note p{color:var(--soft);font-size:17px;line-height:1.6;max-width:640px;margin:0 0 18px}
+.note p a{border-bottom:1px solid var(--line-strong)}
+.note p a:hover{border-color:var(--accent)}
+.note .notfound-back{margin-top:18px}
+</style>
+<title>Privacy | Kauê Prata</title>
+<meta name="description" content="How kaueprata.com uses Microsoft Clarity and what it means for visitors.">
+<link rel="canonical" href="https://kaueprata.com/privacy.html">
+<link rel="alternate" hreflang="en" href="https://kaueprata.com/privacy.html">
+<link rel="alternate" hreflang="pt-BR" href="https://kaueprata.com/pt/privacidade.html">
+<link rel="alternate" hreflang="x-default" href="https://kaueprata.com/privacy.html">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+
+<link rel="preload" href="/assets/v2/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/v5/site.css?v=5">
+</head>
+<body class="notfound note">
+<button class="theme-toggle notfound-theme" type="button" data-theme-toggle aria-label="Switch to light theme" aria-pressed="false">
+  <span class="theme-icon theme-icon-moon" aria-hidden="true"></span>
+  <span class="theme-icon theme-icon-sun" aria-hidden="true"></span>
+</button>
+<main>
+  <p class="kicker">// privacy</p>
+  <h1>Privacy</h1>
+  <p>This site uses Microsoft Clarity to understand how visitors use its pages: clicks, scrolls and session replays, with text masked. Clarity may set cookies in your browser.</p>
+  <p>Microsoft processes this data as an operator, on behalf of the site owner. Under Brazil's LGPD (Lei 13.709/2018), the legal basis is the owner's legitimate interest in improving the site.</p>
+  <p>You can block cookies, or scripts from clarity.ms, in your browser settings. To learn how Microsoft handles data, read the <a href="https://privacy.microsoft.com/privacystatement" rel="noopener">Microsoft Privacy Statement</a>.</p>
+  <p>Questions: <a href="mailto:me@kaueprata.com">me@kaueprata.com</a>.</p>
+  <a class="notfound-back" href="/">← back to the homepage</a>
+</main>
+
+<script src="/assets/v5/site.js?v=3" defer></script>
+</body>
+</html>
