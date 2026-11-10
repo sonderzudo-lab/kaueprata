@@ -66,7 +66,7 @@ function split(total, shares, seed) {
 }
 
 const PAGES = [['/', 46], ['/pt/', 38], ['/pt/privacidade.html', 5], ['/privacy.html', 4], ['/404', 3]];
-const SOURCES = [['Direto', 41], ['LinkedIn', 24], ['GitHub', 15], ['Google', 12], ['Instagram', 8]];
+const SOURCES = [['Direto', 39], ['LinkedIn', 23], ['GitHub', 15], ['Google', 11], ['WhatsApp', 8], ['Instagram', 4]];
 const COUNTRIES = [['Brasil', 78], ['Estados Unidos', 9], ['Portugal', 6], ['Alemanha', 4], ['Outros', 3]];
 const DEVICES = [['Celular', 58], ['Computador', 38], ['Tablet', 4]];
 
