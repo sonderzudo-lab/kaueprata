@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0F1012">
+<meta name="robots" content="noindex, nofollow">
+<script>
+(() => {
+  try {
+    if (localStorage.getItem('kp-theme') === 'light') {
+      document.documentElement.dataset.theme = 'light';
+      document.documentElement.style.colorScheme = 'light';
+      document.querySelector('meta[name="theme-color"]').content = '#F2EFE8';
+    }
+  } catch (e) {}
+})();
+</script>
+<style>html{background:#0F1012}html[data-theme="light"]{background:#F2EFE8}</style>
+<title>Analytics | Kauê Prata</title>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="preload" href="/assets/v2/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/v5/site.css?v=5">
+<style>
+[hidden]{display:none!important}
+.an{padding:0 32px 48px;max-width:1224px;margin:0 auto}
+.an-mono{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--muted)}
+.an-btn{
+  font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--muted);cursor:pointer;
+  background:transparent;border:1px solid var(--line-strong);border-radius:4px;padding:8px 12px;
+  transition:color .2s var(--ease),border-color .2s var(--ease);
+}
+.an-btn:hover{color:var(--fg);border-color:var(--accent)}
+.an-btn[aria-pressed="true"],.an-btn[aria-selected="true"]{color:var(--fg);border-color:var(--accent);background:rgba(var(--accent-rgb),.08)}
+
+/* entrada */
+.an-gate{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;justify-content:center;max-width:420px}
+.an-gate h1{font-size:clamp(40px,7vw,64px);font-weight:700;line-height:1;letter-spacing:-.03em;margin:0 0 28px}
+.an-gate label{display:block;margin:0 0 8px}
+.an-gate input{
+  width:100%;font-family:var(--mono);font-size:15px;color:var(--fg);background:var(--surface);
+  border:1px solid var(--line-strong);border-radius:4px;padding:12px 14px;margin:0 0 14px;
+}
+.an-gate input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.an-gate .an-btn{padding:12px 18px;color:var(--fg)}
+.an-error{min-height:18px;margin:14px 0 0;color:#E5786D}
+:root[data-theme="light"] .an-error{color:#A6382D}
+
+/* topo */
+.an-top{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:20px 0;border-bottom:1px solid var(--line)}
+.an-brand{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.08em;margin-right:auto}
+.an-group{display:flex;gap:6px}
+.an h2{font-family:var(--mono);font-size:12px;font-weight:400;letter-spacing:.1em;color:var(--muted);margin:0 0 16px;text-transform:lowercase}
+
+/* numeros */
+.an-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:28px 0}
+.an-card{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:18px}
+.an-kpi b{display:block;font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1.1;margin:8px 0 6px}
+.an-up{color:#4CC38A}.an-down{color:#E5786D}
+:root[data-theme="light"] .an-up{color:#18794E}:root[data-theme="light"] .an-down{color:#A6382D}
+.an-chart svg{display:block;width:100%;height:auto}
+.an-chart text{font-family:var(--mono);font-size:11px;fill:var(--dim)}
+.an-legend{display:flex;gap:16px;margin:0 0 8px}
+.an-legend i{display:inline-block;width:10px;height:2px;margin-right:6px;vertical-align:middle;background:var(--accent)}
+.an-legend span:last-child i{background:var(--muted)}
+.an-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin:12px 0 0}
+.an-rows{list-style:none;margin:0;padding:0}
+.an-rows li{position:relative;display:flex;justify-content:space-between;gap:12px;padding:9px 0;font-size:14px;border-top:1px solid var(--line)}
+.an-rows li:first-child{border-top:0}
+.an-rows li span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.an-rows li span:last-child{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+.an-rows li::after{content:'';position:absolute;left:0;bottom:-1px;height:2px;width:var(--w,0%);background:var(--accent);opacity:.7}
+
+/* mapa de calor */
+.an-heat{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px;margin:28px 0 0;align-items:start}
+.an-frame{max-height:78vh;overflow:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+.an-stage{position:relative;margin:0 auto}
+.an-stage img{display:block;width:100%;height:auto}
+.an-stage canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.an-fold{position:absolute;left:0;right:0;border-top:1px dashed rgba(255,255,255,.45);pointer-events:none}
+.an-fold span{position:absolute;right:6px;top:4px;font-family:var(--mono);font-size:10px;color:#fff;background:rgba(0,0,0,.6);padding:2px 6px;border-radius:3px}
+.an-scale{height:8px;border-radius:4px;margin:10px 0 6px;background:linear-gradient(90deg,#2B5BFF,#19C8E0,#4CC38A,#F2D24B,#F26B3A)}
+.an-side{display:grid;gap:12px}
+.an-foot{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:space-between;margin:36px 0 0;padding-top:16px;border-top:1px solid var(--line)}
+
+@media (max-width:860px){
+  .an{padding:0 20px 40px}
+  .an-heat{grid-template-columns:minmax(0,1fr)}
+  .an-side{display:contents}
+  .an-side > :first-child{order:-1}
+  .an-frame{max-height:70vh}
+  .an-brand{flex-basis:100%}
+  .an-kpi b{font-size:28px}
+}
+</style>
+</head>
+<body>
+<div class="an">
+
+<main class="an-gate" id="gate" hidden>
+  <p class="kicker">// analytics</p>
+  <h1>Acesso</h1>
+  <form id="gate-form" autocomplete="off">
+    <label class="an-mono" for="gate-pass">senha</label>
+    <input id="gate-pass" type="password" autocomplete="current-password" required maxlength="200">
+    <button class="an-btn" type="submit">entrar →</button>
+  </form>
+  <p class="an-mono an-error" id="gate-error" role="alert"></p>
+</main>
+
+<div id="app" hidden>
+  <header class="an-top">
+    <span class="an-brand">k.prata · analytics · kaueprata.com</span>
+    <div class="an-group" role="tablist" aria-label="Vistas">
+      <button class="an-btn" role="tab" id="tab-overview" aria-selected="true">visão geral</button>
+      <button class="an-btn" role="tab" id="tab-heat" aria-selected="false">mapa de calor</button>
+    </div>
+    <div class="an-group" aria-label="Período">
+      <button class="an-btn" data-range="7" aria-pressed="true">7 dias</button>
+      <button class="an-btn" data-range="30" aria-pressed="false">30 dias</button>
+    </div>
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Ativar tema claro" aria-pressed="false">
+      <span class="theme-icon theme-icon-moon" aria-hidden="true"></span>
+      <span class="theme-icon theme-icon-sun" aria-hidden="true"></span>
+    </button>
+    <button class="an-btn" id="signout" type="button">sair</button>
+  </header>
+
+  <main id="view-overview">
+    <section class="an-kpis" id="kpis" aria-label="Números do período"></section>
+    <section class="an-card an-chart">
+      <h2>sessões por dia</h2>
+      <p class="an-mono an-legend"><span><i></i>sessões</span><span><i></i>visitantes</span></p>
+      <div id="chart"></div>
+    </section>
+    <div class="an-grid">
+      <section class="an-card"><h2>páginas</h2><ul class="an-rows" id="pages"></ul></section>
+      <section class="an-card"><h2>origem</h2><ul class="an-rows" id="sources"></ul></section>
+      <section class="an-card"><h2>países</h2><ul class="an-rows" id="countries"></ul></section>
+      <section class="an-card"><h2>aparelhos</h2><ul class="an-rows" id="devices"></ul></section>
+    </div>
+  </main>
+
+  <main id="view-heat" hidden>
+    <div class="an-heat">
+      <div class="an-frame" id="frame" tabindex="0" aria-label="Página inicial com os cliques por cima">
+        <div class="an-stage" id="stage">
+          <img id="shot" alt="Página inicial de kaueprata.com">
+          <canvas id="heat"></canvas>
+          <div id="folds"></div>
+        </div>
+      </div>
+      <aside class="an-side">
+        <section class="an-card">
+          <h2>página / · cliques</h2>
+          <div class="an-group" aria-label="Aparelho">
+            <button class="an-btn" data-device="desktop" aria-pressed="true">computador</button>
+            <button class="an-btn" data-device="mobile" aria-pressed="false">celular</button>
+          </div>
+          <div class="an-scale" aria-hidden="true"></div>
+          <p class="an-mono" style="display:flex;justify-content:space-between;margin:0"><span>menos</span><span id="heat-total"></span><span>mais</span></p>
+        </section>
+        <section class="an-card"><h2>onde clicam</h2><ul class="an-rows" id="elements"></ul></section>
+        <section class="an-card"><h2>até onde rolam</h2><ul class="an-rows" id="reach"></ul></section>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="an-foot an-mono">
+    <span id="updated"></span>
+    <span id="sample" hidden>dados de demonstração</span>
+  </footer>
+</div>
+
+</div>
+<script src="/assets/v5/site.js?v=3" defer></script>
+<script>
+// painel do dono. Os numeros so chegam depois da senha (/api/analytics); esta pagina nao guarda nenhum.
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const KEY = 'kp-an';
+  const state = { range: 7, device: matchMedia('(max-width:860px)').matches ? 'mobile' : 'desktop', view: 'overview', data: null };
+  const fmt = new Intl.NumberFormat('pt-BR');
+
+  const pass = () => { try { return sessionStorage.getItem(KEY) || ''; } catch (e) { return ''; } };
+  const keep = (token) => { try { token ? sessionStorage.setItem(KEY, token) : sessionStorage.removeItem(KEY); } catch (e) {} };
+
+  function show(signedIn) {
+    $('gate').hidden = signedIn;
+    $('app').hidden = !signedIn;
+    if (!signedIn) $('gate-pass').focus();
+  }
+
+  async function load() {
+    const response = await fetch('/api/analytics?range=' + state.range, { headers: { Authorization: 'Bearer ' + pass() } });
+    if (response.status === 401) { keep(''); show(false); return; }
+    if (!response.ok) throw new Error('load');
+    state.data = await response.json();
+    show(true);
+    render();
+  }
+
+  $('gate-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const field = $('gate-pass');
+    $('gate-error').textContent = '';
+    try {
+      const response = await fetch('/api/analytics', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: field.value }),
+      });
+      if (response.status === 401) { $('gate-error').textContent = 'senha incorreta'; field.select(); return; }
+      if (response.status === 503) { $('gate-error').textContent = 'painel ainda não configurado'; return; }
+      if (!response.ok) throw new Error('signin');
+      keep((await response.json()).token);
+      field.value = '';
+      await load();
+    } catch (e) {
+      $('gate-error').textContent = 'não foi possível entrar agora';
+    }
+  });
+
+  $('signout').addEventListener('click', () => { keep(''); state.data = null; show(false); });
+
+  // ---- visao geral
+  function delta(value) {
+    if (value === undefined) return '';
+    const cls = value >= 0 ? 'an-up' : 'an-down';
+    return `<span class="${cls}">${value >= 0 ? '▲' : '▼'} ${Math.abs(value)}%</span> vs. período anterior`;
+  }
+
+  function kpis(t) {
+    const tiles = [
+      ['sessões', fmt.format(t.sessions), delta(t.delta.sessions)],
+      ['visitantes', fmt.format(t.visitors), delta(t.delta.visitors)],
+      ['páginas vistas', fmt.format(t.pageviews), delta(t.delta.pageviews)],
+      ['páginas por sessão', t.pagesPerSession.toFixed(2).replace('.', ','), ''],
+      ['tempo médio', t.engagement >= 60 ? `${Math.floor(t.engagement / 60)}m ${t.engagement % 60}s` : `${t.engagement}s`, 'ativo na página'],
+      ['rolagem média', t.scroll + '%', 'da altura da página'],
+    ];
+    $('kpis').innerHTML = tiles.map(([label, value, note]) =>
+      `<div class="an-card an-kpi"><span class="an-mono">${label}</span><b>${value}</b><span class="an-mono">${note || '&nbsp;'}</span></div>`).join('');
+  }
+
+  function chart(series) {
+    const narrow = window.innerWidth < 700;
+    const W = narrow ? 520 : 1000, H = narrow ? 280 : 300, L = 36, R = 26, T = 12, B = 30;
+    const max = Math.max(4, ...series.map((d) => d.sessions));
+    const top = Math.ceil(max / 4) * 4;
+    const x = (i) => L + (series.length === 1 ? 0 : i * (W - L - R) / (series.length - 1));
+    const y = (v) => T + (H - T - B) * (1 - v / top);
+    const line = (key) => series.map((d, i) => `${x(i).toFixed(1)},${y(d[key]).toFixed(1)}`).join(' ');
+    const step = Math.ceil(series.length / (narrow ? 4 : 8));
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Sessões e visitantes por dia">`;
+    for (let g = 0; g <= 4; g += 1) {
+      const v = top * g / 4;
+      svg += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/>` +
+             `<text x="${L - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+    }
+    series.forEach((d, i) => {
+      if (i % step === 0 || i === series.length - 1) {
+        svg += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${d.date.slice(8)}/${d.date.slice(5, 7)}</text>`;
+      }
+    });
+    svg += `<polygon points="${L},${y(0)} ${line('sessions')} ${x(series.length - 1)},${y(0)}" fill="rgba(var(--accent-rgb),.10)"/>` +
+           `<polyline points="${line('visitors')}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4"/>` +
+           `<polyline points="${line('sessions')}" fill="none" stroke="var(--accent)" stroke-width="2"/>`;
+    series.forEach((d, i) => {
+      svg += `<circle cx="${x(i)}" cy="${y(d.sessions)}" r="${series.length > 14 ? 2.5 : 4}" fill="var(--accent)">` +
+             `<title>${d.date.slice(8)}/${d.date.slice(5, 7)}: ${d.sessions} sessões, ${d.visitors} visitantes, ${d.pageviews} páginas</title></circle>`;
+    });
+    $('chart').innerHTML = svg + '</svg>';
+  }
+
+  function rows(id, list, unit) {
+    const total = list.reduce((sum, item) => sum + item.value, 0) || 1;
+    const max = Math.max(1, ...list.map((item) => item.value));
+    const node = $(id);
+    node.textContent = '';
+    for (const item of list) {
+      const li = document.createElement('li');
+      li.style.setProperty('--w', Math.round(item.value / max * 100) + '%');
+      const label = document.createElement('span');
+      label.textContent = item.label;
+      const value = document.createElement('span');
+      value.textContent = unit === '%' ? item.value + '%' : `${fmt.format(item.value)} · ${Math.round(item.value / total * 100)}%`;
+      li.append(label, value);
+      node.append(li);
+    }
+  }
+
+  // ---- mapa de calor
+  const PALETTE = [[43, 91, 255], [25, 200, 224], [76, 195, 138], [242, 210, 75], [242, 107, 58]];
+  function tint(level) {
+    const pos = Math.min(0.9999, level) * (PALETTE.length - 1);
+    const i = Math.floor(pos), f = pos - i;
+    return PALETTE[i].map((c, k) => Math.round(c + (PALETTE[i + 1][k] - c) * f));
+  }
+
+  function drawHeat() {
+    const data = state.data && state.data.heatmap[state.device];
+    const image = $('shot'), canvas = $('heat');
+    if (!data || !image.complete || !image.naturalWidth || $('view-heat').hidden) return;
+    const width = image.clientWidth, height = image.clientHeight;
+    canvas.width = width; canvas.height = height;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const radius = Math.max(16, width * (state.device === 'mobile' ? 0.08 : 0.032));
+    for (const [px, py] of data.points) {
+      const cx = px * width, cy = py * height;
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+      glow.addColorStop(0, 'rgba(0,0,0,.045)');
+      glow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
+    }
+    const pixels = ctx.getImageData(0, 0, width, height);
+    const bytes = pixels.data;
+    for (let i = 3; i < bytes.length; i += 4) {
+      const alpha = bytes[i];
+      if (!alpha) continue;
+      const level = Math.min(1, alpha / 235);
+      const [r, g, b] = tint(level);
+      bytes[i - 3] = r; bytes[i - 2] = g; bytes[i - 1] = b;
+      bytes[i] = Math.round(Math.min(1, level * 6) * (95 + level * 85));
+    }
+    ctx.putImageData(pixels, 0, 0);
+    const folds = $('folds');
+    folds.textContent = '';
+    for (const mark of data.reach.slice(1)) {
+      const line = document.createElement('div');
+      line.className = 'an-fold';
+      line.style.top = (mark.top * height) + 'px';
+      const tag = document.createElement('span');
+      tag.textContent = `${mark.percent}% chegam em ${mark.label}`;
+      line.append(tag);
+      folds.append(line);
+    }
+  }
+
+  function heat() {
+    const data = state.data.heatmap[state.device];
+    $('stage').style.maxWidth = state.device === 'mobile' ? '390px' : '960px';
+    const image = $('shot');
+    if (!image.src.endsWith(data.image)) image.src = data.image;
+    image.width = data.width; image.height = data.height;
+    $('heat-total').textContent = `${fmt.format(data.clicks)} cliques`;
+    rows('elements', data.elements.map((e) => ({ label: e.label, value: e.clicks })));
+    rows('reach', data.reach.map((r) => ({ label: r.label, value: r.percent })), '%');
+    drawHeat();
+  }
+
+  function render() {
+    const d = state.data;
+    if (!d) return;
+    $('view-overview').hidden = state.view !== 'overview';
+    $('view-heat').hidden = state.view !== 'heat';
+    $('tab-overview').setAttribute('aria-selected', String(state.view === 'overview'));
+    $('tab-heat').setAttribute('aria-selected', String(state.view === 'heat'));
+    document.querySelectorAll('[data-range]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.range) === state.range)));
+    document.querySelectorAll('[data-device]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.device === state.device)));
+    kpis(d.totals);
+    chart(d.series);
+    rows('pages', d.pages);
+    rows('sources', d.sources);
+    rows('countries', d.countries);
+    rows('devices', d.devices);
+    heat();
+    const when = new Date(d.updated);
+    $('updated').textContent = `atualizado às ${when.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} · últimos ${d.range} dias`;
+    $('sample').hidden = !d.sample;
+  }
+
+  $('tab-overview').addEventListener('click', () => { state.view = 'overview'; render(); });
+  $('tab-heat').addEventListener('click', () => { state.view = 'heat'; render(); });
+  document.querySelectorAll('[data-range]').forEach((button) => button.addEventListener('click', () => {
+    state.range = Number(button.dataset.range);
+    load().catch(() => {});
+  }));
+  document.querySelectorAll('[data-device]').forEach((button) => button.addEventListener('click', () => {
+    state.device = button.dataset.device;
+    render();
+  }));
+  $('shot').addEventListener('load', drawHeat);
+  let timer = 0;
+  window.addEventListener('resize', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { if (state.data) chart(state.data.series); drawHeat(); }, 150);
+  });
+
+  if (pass()) load().catch(() => show(false));
+  else show(false);
+})();
+</script>
+</body>
+</html>
